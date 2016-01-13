@@ -1,24 +1,26 @@
 package com.mygdx.game;
 
-import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 /**
- * Created by William on 12/8/2015.
+ * Work in progress
  */
-public class HitObject extends Rectangle {
+public class HitObject extends Sprite {
     protected int beatNumerator, beatDenominator, holdDuration;
-    protected double beatDouble;
+    protected float beatFloat, beatTimeMillis;
 
-    public HitObject(int beatNumerator, int beatDenominator, int holdDuration) {
-        super(0, 0, 256, 82);
+    public HitObject(TextureRegion texRegion, int beatNumerator, int beatDenominator, int bpm, int holdDuration) {
+        super(texRegion);
         this.beatNumerator = beatNumerator;
         this.beatDenominator = beatDenominator;
         this.holdDuration = holdDuration;
-        beatDouble = beatNumerator / beatDenominator;
+        beatFloat = beatNumerator / beatDenominator;
+        beatTimeMillis = (beatFloat / bpm) * 60000;
     }
 
-    public HitObject(int beatNumerator, int beatDenominator) {
-        this(beatNumerator, beatDenominator, 0);
+    public HitObject(TextureRegion texRegion, int beatNumerator, int beatDenominator, int bpm) {
+        this(texRegion, beatNumerator, beatDenominator, bpm, 0);
     }
 
 
