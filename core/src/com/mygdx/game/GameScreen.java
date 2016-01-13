@@ -21,42 +21,39 @@ public class GameScreen implements Screen{
     final ButtonHero game;
     private OrthographicCamera camera;
 
-    private Array<Texture> hitObjectImages;
+    private Texture hitObjectImage1, hitObjectImage2;
     private Array<Array<HitObject>> hitObjectArrays;
     private Sound hitSound;
     private Music music;
     private int bpm, offset, snapBeatDenominator;
+    private int[][] indices;
+    private double secondsFor4Beats;
     private double hoSpeed; //pixels per second
-    private long lastNanoTime, currentNanoTime;
+    private long lastNanoTime, currentNanoTime, startTime;
     private boolean snapToBeat;
 
-    static final int[] XPOSITIONS= {0, 100, 200, 400};
-    static final int YPOSITION = 100;
-    static final int BEAT_DISTANCE = 500;
+    static final long CONVERSION_MINUTE_TO_NANO = 60000000000L;
+
+    static final int[] XPOSITIONS= {300, 600, 900, 1200};
+    static final int YPOSITION = 900;
+    static final int HIT_OBJECT_DISTANCE = 500;
 
 
     public GameScreen(final ButtonHero game) {
         this.game = game;
-        hitObjectImages = new Array<>(2);
-        hitObjectImages.add(new Texture(Gdx.files.internal("mania-note1.png")));
-        hitObjectImages.add(new Texture(Gdx.files.internal("mania-note2.png")));
+        hitObjectImage1 = new Texture(Gdx.files.internal("mania-note1.png"));
+        hitObjectImage2 = new Texture(Gdx.files.internal("mania-note2.png"));
         hitSound = Gdx.audio.newSound(Gdx.files.internal("hitsound.wav"));
-        music = Gdx.audio.newMusic(Gdx.files.internal("colors.mp3"));
         camera = new OrthographicCamera();
-        camera.setToOrtho(false, 1280, 720);
+        camera.setToOrtho(false, 1920, 1080);
+
         hitObjectArrays = new Array<>(4);
-        addHitObjects(new File("colors.txt"));
-
-        music.play();
-
-    }
-
-
-    private void addHitObjects(File file){
+        music = Gdx.audio.newMusic(Gdx.files.internal("colors.mp3"));
         try {
-            Scanner scanner = new Scanner(file);
+            Scanner scanner = new Scanner(new File("colors.txt"));
             bpm = scanner.nextInt();
-            hoSpeed = 60 / bpm;
+            secondsFor4Beats = 60.0 / bpm;
+            hoSpeed = HIT_OBJECT_DISTANCE / secondsFor4Beats;
             offset = Integer.parseInt(scanner.next().substring(1));
             snapToBeat = scanner.nextBoolean();
             if (snapToBeat) snapBeatDenominator = scanner.nextInt();
@@ -86,7 +83,25 @@ public class GameScreen implements Screen{
         catch (FileNotFoundException e) {
             System.out.println("broken");
         }
+
+        indices = new int[4][2];
+        for (int i = 0; i < 4; i++) {
+            if (hitObjectArrays.get(i).get(0).beatDouble < 4) {
+                indices[i][0] = 0;
+                int j = 1;
+                while (hitObjectArrays.get(i).get(j).beatDouble < 4) {
+                    j++;
+                }
+                indices[i][1] = j;
+            } else {
+                indices[i][0] = -1;
+            }
+        }
+
+        music.play();
+        startTime = TimeUtils.nanoTime();
     }
+
 
     @Override
     public void show() {
@@ -96,6 +111,7 @@ public class GameScreen implements Screen{
     @Override
     public void render(float delta) {
         currentNanoTime = TimeUtils.nanoTime();
+
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         // tell the camera to update its matrices.
@@ -105,14 +121,47 @@ public class GameScreen implements Screen{
         // coordinate system specified by the camera.
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.begin();
-        game.batch.draw(hitObjectImages.get(0), hitObjectArrays.get(1).get(0).x, hitObjectArrays.get(1).get(0).y);
+
+        for (int i = 0; i < 4; i++) {
+            if (indices[i][0] >= 0) {
+                for (int j = indices[i][0]; j < indices[i][1]; j++) {
+                    if (i == 0 || i == 3)
+                        game.batch.draw(hitObjectImage1, hitObjectArrays.get(i).get(j).x, hitObjectArrays.get(i).get(j).y);
+                    else
+                        game.batch.draw(hitObjectImage2, hitObjectArrays.get(i).get(j).x, hitObjectArrays.get(i).get(j).y);
+                }
+            }
+        }
 
         game.batch.end();
 
-        for (int i = 0; i < hitObjectArrays.size; i++) {
-            for (HitObject ho : )
-        }
+        double musicSecondsTimeElapsed = (currentNanoTime - startTime) / 10000000000L;
+        if (lastNanoTime != 0) {
+            for (int i = 0; i < 4; i++) {
+                if (indices[i][0] >=0) {
+                    for (int j = indices[i][0]; j < indices[i][1]; j++) {
+                        hitObjectArrays.get(i).get(j).y -= hoSpeed * ((currentNanoTime - lastNanoTime) / 100000000);
+                    }
+                    while (hitObjectArrays.get(i).get(indices[i][0]).beatDouble < musicSecondsTimeElapsed - secondsFor4Beats) {
+                        System.out.println((currentNanoTime - startTime) * 1000000000);
+                        indices[i][0]++;
+                    }
+                    while (indices[i][1] > 0 && hitObjectArrays.get(i).get(indices[i][1]).beatDouble < musicSecondsTimeElapsed) {
+                        indices[i][1]++;
+                    }
+                } else {
+                    if (hitObjectArrays.get(i).get(0).beatDouble < 4 + bpm*(musicSecondsTimeElapsed/60)) {
+                        indices[i][0] = 0;
+                        int j = 1;
+                        while (hitObjectArrays.get(i).get(j).beatDouble < 4 + bpm*(musicSecondsTimeElapsed/60)) {
+                            j++;
+                        }
+                        indices[i][1] = j;
+                    }
+                }
+            }
 
+        }
         lastNanoTime = currentNanoTime;
     }
 
@@ -139,7 +188,9 @@ public class GameScreen implements Screen{
     @Override
     public void dispose() {
         game.dispose();
-        hitObjectImages.forEach(texture -> dispose());
-        //hitObjectArrays.forEach(hitObjects -> dispose());
+        hitObjectImage1.dispose();
+        hitObjectImage2.dispose();
+        hitSound.dispose();
+        music.dispose();
     }
 }
