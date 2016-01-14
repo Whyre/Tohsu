@@ -10,6 +10,9 @@ public class DesktopLauncher {
 		config.title = "Tohsu!";
 		config.width = 1920;
 		config.height = 1080;
+		config.resizable = false;
+		System.setProperty("org.lwjgl.opengl.Window.undecorated", "true");
+//		config.fullscreen = true;
 		new LwjglApplication(new ButtonHero(), config);
 	}
 }
