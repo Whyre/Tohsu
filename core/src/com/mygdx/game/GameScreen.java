@@ -4,15 +4,16 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.audio.Music;
-import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.utils.*;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.IntMap;
+import com.badlogic.gdx.utils.TimeUtils;
+import com.badlogic.gdx.utils.Timer;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -23,34 +24,28 @@ import java.util.Scanner;
  * Work in progress
  */
 public class GameScreen implements Screen{
-    final ButtonHero game;
-    private OrthographicCamera camera;
-    private ShapeRenderer shapeTester;
-
-    private Texture spriteSheet;
-    private TextureRegion hitObject1, hitObject2;
-    private IntMap<Array<HitObject>> hitObjectMap;
-    private Array<HitObject> drawnHitObjects;
-    private OrderedMap<Integer, HitObject> drawnHitObjectsv2;
-    private Sound hitSound;
-    private Music music;
-    private int bpm, offset, snapBeatDenominator;
-    private int[] spawnIndices = new int[4]; //the index of the first hitobject that has not yet been spawned
-    private int[] songIndices = new int[4]; //the index of the first hitobject that has not yet reached the strum bar
-    private float secondsFor4Beats, millisFor4Beats;
-    private boolean snapToBeat;
-
     static final double EPSILON = 0.0000001;
-
     static final int[] XPOSITIONS= {50, 250, 450, 650};
     static final int YPOSITION = 900;
     static final int BAR_POSITION = 200;
     static final int HIT_OBJECT_DISTANCE = YPOSITION - BAR_POSITION;
-    static final int[] KEYS = {Keys.D, Keys.F, Keys.J, Keys.K};
-
+    static final int[] KEYS = {Keys.A, Keys.S, Keys.D, Keys.F};
+    static TextureRegion hitObject1, hitObject2;
+    static int hitFlag = -1; //-1: do nothing, 0: perfect, 1: great, 2:bad, 3:miss
+    static int[] spawnIndices = new int[4]; //the index of the first hitobject that has not yet been spawned
+    static int[] songIndices = new int[4]; //the index of the first hitobject that has not yet reached the strum bar
+    static long visualOffsetMillis = 0;
+    final ButtonHero game;
+    private OrthographicCamera camera;
+    private ShapeRenderer shapeTester;
+    private BeatMap currentBeatMap;
+    private Texture spriteSheet;
+    private Array<HitObject> drawnHitObjects;
+    private boolean musicWait, isLoading;
     private float lastReportedPlayheadPosition;
     private long previousFrameTime, songTime;
-    private long visualOffsetMillis = 0;
+    private int accuracy = 10000;
+    private float hitTimeElapsedMillis;
 
 
     public GameScreen(final ButtonHero game) {
@@ -58,23 +53,31 @@ public class GameScreen implements Screen{
         spriteSheet = new Texture(Gdx.files.internal("maniasheet.png"));
         hitObject1 = new TextureRegion(spriteSheet, 0, 0, 256, 82);
         hitObject2 = new TextureRegion(spriteSheet, 0, 82, 256, 82);
-        hitSound = Gdx.audio.newSound(Gdx.files.internal("hitsound.wav"));
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 1920, 1080);
         InputProcessor inputProcessor = new MyInputProccesor();
         Gdx.input.setInputProcessor(inputProcessor);
+        initializeAndPlay();
+        shapeTester = new ShapeRenderer();
+    }
 
-        hitObjectMap = new IntMap<>();
+    private void initializeAndPlay() {
+        isLoading = true;
+        for (int i = 0; i < 4; i++) {
+            spawnIndices[i] = 0;
+            songIndices[i] = 0;
+        }
+        IntMap<Array<HitObject>> hitObjectMap = new IntMap<>();
         drawnHitObjects = new Array<>(false, 32);
-        music = Gdx.audio.newMusic(Gdx.files.internal("colors.mp3"));
         try {
             Scanner scanner = new Scanner(new File("colors.txt"));
-            bpm = scanner.nextInt();
-            secondsFor4Beats = 240f / bpm;
-            millisFor4Beats = secondsFor4Beats * 1000;
-            offset = Integer.parseInt(scanner.next().substring(1));
-            snapToBeat = scanner.nextBoolean();
-            if (snapToBeat) snapBeatDenominator = scanner.nextInt();
+            int bpm = scanner.nextInt();
+            float secondsFor4Beats = 120f / bpm;
+            int offset = Integer.parseInt(scanner.next().substring(1));
+            boolean snapToBeat = scanner.nextBoolean();
+            int beatDenominator = -1;
+            if (snapToBeat)
+                beatDenominator = scanner.nextInt();
             while (scanner.hasNextLine()) {
                 int index = scanner.nextInt() - 1;
                 hitObjectMap.put(index, new Array<>());
@@ -83,57 +86,57 @@ public class GameScreen implements Screen{
                     HitObject ho;
                     if (str.contains("d")) {
                         if (index == 0 || index == 3) {
-                            ho = new HitObject(hitObject1, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * snapBeatDenominator +
-                                    Integer.parseInt(str.substring(str.indexOf("n") + 1, str.indexOf("d"))),
-                                    snapBeatDenominator, bpm, Integer.parseInt(str.substring(str.indexOf("d") + 1)));
+                            ho = new HoldObject(hitObject1, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
+                                    Integer.parseInt(str.substring(str.indexOf("n") + 1, str.indexOf("d"))), beatDenominator, bpm,
+                                    Integer.parseInt(str.substring(str.indexOf("d") + 1)));
                         } else {
-                            ho = new HitObject(hitObject2, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * snapBeatDenominator +
-                                    Integer.parseInt(str.substring(str.indexOf("n") + 1, str.indexOf("d"))),
-                                    snapBeatDenominator, bpm, Integer.parseInt(str.substring(str.indexOf("d") + 1)));
+                            ho = new HoldObject(hitObject2, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
+                                    Integer.parseInt(str.substring(str.indexOf("n") + 1, str.indexOf("d"))), beatDenominator, bpm,
+                                    Integer.parseInt(str.substring(str.indexOf("d") + 1)));
                         }
-                    }
-                    else if (index == 0 || index == 3) {
-                        ho = new HitObject(hitObject1, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * snapBeatDenominator +
-                                Integer.parseInt(str.substring(str.indexOf("n") + 1)),
-                                snapBeatDenominator, bpm);
+                    } else if (index == 0 || index == 3) {
+                        ho = new HitObject(hitObject1, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
+                                Integer.parseInt(str.substring(str.indexOf("n") + 1)), beatDenominator, bpm);
                     } else {
-                        ho = new HitObject(hitObject2, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * snapBeatDenominator +
-                                Integer.parseInt(str.substring(str.indexOf("n") + 1)),
-                                snapBeatDenominator, bpm);
+                        ho = new HitObject(hitObject2, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
+                                Integer.parseInt(str.substring(str.indexOf("n") + 1)), beatDenominator, bpm);
                     }
                     ho.setScale(.5f);
                     ho.setX(XPOSITIONS[index]);
                     ho.setY(YPOSITION);
                     hitObjectMap.get(index).add(ho);
+                    currentBeatMap = new BeatMap(Gdx.audio.newMusic(Gdx.files.internal("colors.mp3")),
+                            Gdx.audio.newSound(Gdx.files.internal("hitsound.wav")),
+                            hitObjectMap,
+                            offset,
+                            bpm,
+                            beatDenominator,
+                            secondsFor4Beats);
                 }
             }
-        }
-        catch (FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             System.out.println("broken");
         }
-
-        for (Array<HitObject> hoArray : hitObjectMap.values()) {
-            for (HitObject ho : hoArray) {
-                System.out.println("Array: " + hitObjectMap.findKey(hoArray, true, -1) + " Beat Float: " + ho.beatFloat + " " + ho.beatTimeMillis);
-            }
-        }
-
-        boolean musicWait = false;
+        musicWait = false;
         float minTime = 1000;
-        for (Array<HitObject> hoArray : hitObjectMap.values()) {
+        for (Array<HitObject> hoArray : currentBeatMap.hitObjectMap.values()) {
             float firstTime = hoArray.get(0).beatTimeMillis;
-            musicWait |= firstTime < millisFor4Beats;
+            musicWait |= firstTime < currentBeatMap.millisFor4Beats;
             minTime = Math.min(minTime, firstTime);
         }
 
         for (int i = 0; i < 4; i++) {
-            if (Math.abs(hitObjectMap.get(i).get(0).beatTimeMillis - minTime) < EPSILON) {
-                drawnHitObjects.add(hitObjectMap.get(i).get(0));
+            if (Math.abs(currentBeatMap.hitObjectMap.get(i).get(0).beatTimeMillis - minTime) < EPSILON) {
+                drawnHitObjects.add(currentBeatMap.hitObjectMap.get(i).get(0));
                 spawnIndices[i]++;
             }
         }
+        currentBeatMap.music.setOnCompletionListener(music1 -> {
+            currentBeatMap.music.setPosition(0);
+            initializeAndPlay();
+        });
 
-        shapeTester = new ShapeRenderer();
+        isLoading = false;
 
         if (musicWait) {
             Timer.schedule(new Timer.Task() {
@@ -141,13 +144,13 @@ public class GameScreen implements Screen{
                 public void run() {
                     previousFrameTime = TimeUtils.millis();
                     lastReportedPlayheadPosition = 0;
-                    music.play();
+                    currentBeatMap.music.play();
                 }
-            }, secondsFor4Beats - minTime);
+            }, currentBeatMap.secondsFor4Beats - minTime);
         } else {
             previousFrameTime = TimeUtils.millis();
             lastReportedPlayheadPosition = 0;
-            music.play();
+            currentBeatMap.music.play();
         }
     }
 
@@ -162,9 +165,9 @@ public class GameScreen implements Screen{
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         songTime += TimeUtils.timeSinceMillis(previousFrameTime);
         previousFrameTime = TimeUtils.millis();
-        if (music.getPosition() != lastReportedPlayheadPosition) {
-            songTime = (long) Math.round((songTime + music.getPosition() * 1000) / 2);
-            lastReportedPlayheadPosition = music.getPosition();
+        if (currentBeatMap.music.getPosition() != lastReportedPlayheadPosition) {
+            songTime = (long) Math.round((songTime + currentBeatMap.music.getPosition() * 1000) / 2);
+            lastReportedPlayheadPosition = currentBeatMap.music.getPosition();
         }
         // tell the camera to update its matrices.
         camera.update();
@@ -177,34 +180,54 @@ public class GameScreen implements Screen{
         for (int i = 0; i < 3; i++) {
             shapeTester.line(XPOSITIONS[i + 1] + 25, 0, XPOSITIONS[i + 1] + 25, 1080);
         }
-
         shapeTester.end();
+
+        if (isLoading) return;
 
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.begin();
         for (HitObject ho : drawnHitObjects) {
             ho.draw(game.batch);
         }
-  /*      for (HitObject ho : drawnHitObjectsv2.values()) {
-            ho.draw(game.batch);
-        }*/
+        if (hitFlag >= 0) {
+            switch (hitFlag) {
+                case 0:
+                    game.font.draw(game.batch, "PERFECT!", 450, 500);
+                    break;
+                case 1:
+                    game.font.draw(game.batch, "GREAT!", 450, 500);
+                    break;
+                case 2:
+                    game.font.draw(game.batch, "BAD!", 450, 500);
+                    break;
+                case 3:
+                    game.font.draw(game.batch, "MISS!", 450, 500);
+                    break;
+            }
+            hitTimeElapsedMillis += Gdx.graphics.getDeltaTime() * 1000;
+        }
+
+        if (hitTimeElapsedMillis > 300) {
+            hitFlag = -1;
+            hitTimeElapsedMillis = 0;
+        }
+//        game.font.draw(game.batch, accuracy / 100 + "." + accuracy % 100, 100, 800);
         game.batch.end();
+
         Iterator<HitObject> iter = drawnHitObjects.iterator();
         while (iter.hasNext()) {
             HitObject ho = iter.next();
-            ho.setY((BAR_POSITION + ((ho.beatTimeMillis - songTime + visualOffsetMillis) * HIT_OBJECT_DISTANCE) / millisFor4Beats));
-            if (ho.getY() <= BAR_POSITION - 150) {
-                songIndices[ho.index]++;
+            ho.update(songTime, currentBeatMap.millisFor4Beats);
+            if (ho.isHit) {
                 iter.remove();
             }
         }
 
         for (int i = 0; i < 4; i++) {
             try {
-                HitObject ho = hitObjectMap.get(i).get(spawnIndices[i]);
-                if (ho.beatTimeMillis <= songTime + millisFor4Beats) {
+                HitObject ho = currentBeatMap.hitObjectMap.get(i).get(spawnIndices[i]);
+                if (ho.beatTimeMillis <= songTime + currentBeatMap.millisFor4Beats) {
                     drawnHitObjects.add(ho);
-                    // drawnHitObjectsv2.put(i, ho);
                     spawnIndices[i]++;
                 }
             } catch (IndexOutOfBoundsException e) {
@@ -237,8 +260,8 @@ public class GameScreen implements Screen{
     public void dispose() {
         game.dispose();
         spriteSheet.dispose();
-        hitSound.dispose();
-        music.dispose();
+        currentBeatMap.dispose();
+        shapeTester.dispose();
     }
 
     public class MyInputProccesor implements InputProcessor {
@@ -246,11 +269,21 @@ public class GameScreen implements Screen{
         @Override
         public boolean keyDown(int keycode) {
             for (int i = 0; i < 4; i++) {
-                if (keycode == KEYS[i]) {
-                    float difference = Math.abs(hitObjectMap.get(i).get(songIndices[i]).beatTimeMillis - songTime);
-                    System.out.println(difference);
-                    if (difference < 50) {
-                        hitSound.play();
+                if (keycode == KEYS[i] && songIndices[i] < currentBeatMap.hitObjectMap.get(i).size) {
+                    HitObject ho = currentBeatMap.hitObjectMap.get(i).get(songIndices[i]);
+                    float difference = Math.abs(ho.beatTimeMillis - songTime);
+                    if (difference < 37.5) {
+                        ho.onHit(0);
+                        currentBeatMap.hitSound.play();
+                    } else if (difference < 83.5) {
+                        ho.onHit(1);
+                        currentBeatMap.hitSound.play();
+                    } else if (difference < 129.5) {
+                        ho.onHit(2);
+                        currentBeatMap.hitSound.play();
+                    } else if (difference < 400) {
+                        ho.onHit(3);
+                        currentBeatMap.hitSound.play();
                     }
                 }
             }
@@ -291,5 +324,6 @@ public class GameScreen implements Screen{
         public boolean scrolled(int amount) {
             return false;
         }
+
     }
 }

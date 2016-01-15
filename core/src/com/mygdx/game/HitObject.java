@@ -2,25 +2,46 @@ package com.mygdx.game;
 
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.utils.Pool;
 
 /**
  * Work in progress
  */
-public class HitObject extends Sprite {
-    protected int beatNumerator, beatDenominator, holdDuration, index;
-    protected float beatFloat, beatTimeMillis;
+public class HitObject extends Sprite implements Pool.Poolable {
+    //    int beatNumerator;
+    int index;
+    float beatFloat, beatTimeMillis;
+    boolean isHit;
 
-    public HitObject(TextureRegion texRegion, int index, int beatNumerator, int beatDenominator, int bpm, int holdDuration) {
+    public HitObject(TextureRegion texRegion, int index, int beatNumerator, int beatDenominator, int bpm) {
         super(texRegion);
-        this.beatNumerator = beatNumerator;
-        this.beatDenominator = beatDenominator;
-        this.holdDuration = holdDuration;
         this.index = index;
         beatFloat = (float) beatNumerator / beatDenominator;
         beatTimeMillis = (beatFloat / bpm) * 60000;
     }
 
-    public HitObject(TextureRegion texRegion, int index, int beatNumerator, int beatDenominator, int bpm) {
-        this(texRegion, index, beatNumerator, beatDenominator, bpm, 0);
+    public void onHit(int hitFlag) {
+        GameScreen.hitFlag = hitFlag;
+        isHit = true;
+        GameScreen.songIndices[index]++;
+        setRegion(400, 400, 100, 100);
+    }
+
+    public void update(long songTime, float millisFor4Beats) {
+        setY((GameScreen.BAR_POSITION + ((beatTimeMillis - songTime + GameScreen.visualOffsetMillis) * GameScreen.HIT_OBJECT_DISTANCE) / millisFor4Beats));
+        if (getY() <= GameScreen.BAR_POSITION - 150) {
+            GameScreen.hitFlag = 3;
+            if (!isHit) {
+                GameScreen.songIndices[index]++;
+                isHit = true;
+            }
+        }
+    }
+
+    @Override
+    public void reset() {
+        beatFloat = 0;
+        beatTimeMillis = 0;
+        isHit = false;
     }
 }
