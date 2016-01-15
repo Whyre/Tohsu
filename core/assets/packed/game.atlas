@@ -1,0 +1,20 @@
+
+game.png
+size: 1024,128
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+mania-note1
+  rotate: false
+  xy: 2, 2
+  size: 256, 82
+  orig: 256, 82
+  offset: 0, 0
+  index: -1
+mania-note2
+  rotate: false
+  xy: 260, 2
+  size: 256, 82
+  orig: 256, 82
+  offset: 0, 0
+  index: -1
