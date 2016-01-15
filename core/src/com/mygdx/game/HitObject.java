@@ -8,10 +8,10 @@ import com.badlogic.gdx.utils.Pool;
  * Work in progress
  */
 public class HitObject extends Sprite implements Pool.Poolable {
-    //    int beatNumerator;
-    int index;
     float beatFloat, beatTimeMillis;
-    boolean isHit;
+    boolean isHit = false;
+    //    int beatNumerator;
+    private int index;
 
     public HitObject(TextureRegion texRegion, int index, int beatNumerator, int beatDenominator, int bpm) {
         super(texRegion);

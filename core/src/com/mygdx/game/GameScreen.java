@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.Array;
@@ -40,34 +41,29 @@ public class GameScreen implements Screen{
     private ShapeRenderer shapeTester;
     private BeatMap currentBeatMap;
     private Texture spriteSheet;
+    private TextureAtlas atlas;
     private Array<HitObject> drawnHitObjects;
     private boolean musicWait, isLoading;
     private float lastReportedPlayheadPosition;
     private long previousFrameTime, songTime;
     private int accuracy = 10000;
     private float hitTimeElapsedMillis;
-
+    private boolean firstTime = true;
 
     public GameScreen(final ButtonHero game) {
         this.game = game;
-        spriteSheet = new Texture(Gdx.files.internal("maniasheet.png"));
-        hitObject1 = new TextureRegion(spriteSheet, 0, 0, 256, 82);
-        hitObject2 = new TextureRegion(spriteSheet, 0, 82, 256, 82);
+        songTime = 0;
+        atlas = new TextureAtlas(Gdx.files.internal("packed/game.atlas"));
+//        spriteSheet = new Texture(Gdx.files.internal("maniasheet.png"));
+//        hitObject1 = new TextureRegion(spriteSheet, 0, 0, 256, 82);
+//        hitObject2 = new TextureRegion(spriteSheet, 0, 82, 256, 82);
+        hitObject1 = atlas.findRegion("mania-note1");
+        hitObject2 = atlas.findRegion("mania-note2");
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 1920, 1080);
         InputProcessor inputProcessor = new MyInputProccesor();
         Gdx.input.setInputProcessor(inputProcessor);
-        initializeAndPlay();
-        shapeTester = new ShapeRenderer();
-    }
-
-    private void initializeAndPlay() {
-        isLoading = true;
-        for (int i = 0; i < 4; i++) {
-            spawnIndices[i] = 0;
-            songIndices[i] = 0;
-        }
-        IntMap<Array<HitObject>> hitObjectMap = new IntMap<>();
+        IntMap<Array<HitObject>> hitObjectMap = new IntMap<>(4);
         drawnHitObjects = new Array<>(false, 32);
         try {
             Scanner scanner = new Scanner(new File("colors.txt"));
@@ -133,7 +129,8 @@ public class GameScreen implements Screen{
         }
         currentBeatMap.music.setOnCompletionListener(music1 -> {
             currentBeatMap.music.setPosition(0);
-            initializeAndPlay();
+            this.myDispose();
+            this.refresh();
         });
 
         isLoading = false;
@@ -152,6 +149,7 @@ public class GameScreen implements Screen{
             lastReportedPlayheadPosition = 0;
             currentBeatMap.music.play();
         }
+        shapeTester = new ShapeRenderer();
     }
 
 
@@ -162,6 +160,7 @@ public class GameScreen implements Screen{
 
     @Override
     public void render(float delta) {
+        if (isLoading) return;
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         songTime += TimeUtils.timeSinceMillis(previousFrameTime);
         previousFrameTime = TimeUtils.millis();
@@ -181,9 +180,6 @@ public class GameScreen implements Screen{
             shapeTester.line(XPOSITIONS[i + 1] + 25, 0, XPOSITIONS[i + 1] + 25, 1080);
         }
         shapeTester.end();
-
-        if (isLoading) return;
-
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.begin();
         for (HitObject ho : drawnHitObjects) {
@@ -262,6 +258,106 @@ public class GameScreen implements Screen{
         spriteSheet.dispose();
         currentBeatMap.dispose();
         shapeTester.dispose();
+        drawnHitObjects.forEach((hitObject -> dispose()));
+    }
+
+    public void myDispose() {
+        currentBeatMap.dispose();
+        shapeTester.dispose();
+    }
+
+    public void refresh() {
+        isLoading = true;
+        songTime = 0;
+        hitFlag = -1;
+        spawnIndices = new int[4];
+        songIndices = new int[4];
+        IntMap<Array<HitObject>> hitObjectMap = new IntMap<>(4);
+        drawnHitObjects = new Array<>(false, 32);
+        try {
+            Scanner scanner = new Scanner(new File("colors.txt"));
+            int bpm = scanner.nextInt();
+            float secondsFor4Beats = 120f / bpm;
+            int offset = Integer.parseInt(scanner.next().substring(1));
+            boolean snapToBeat = scanner.nextBoolean();
+            int beatDenominator = -1;
+            if (snapToBeat)
+                beatDenominator = scanner.nextInt();
+            while (scanner.hasNextLine()) {
+                int index = scanner.nextInt() - 1;
+                hitObjectMap.put(index, new Array<>());
+                while (!scanner.hasNextInt() && scanner.hasNext()) {
+                    String str = scanner.next();
+                    HitObject ho;
+                    if (str.contains("d")) {
+                        if (index == 0 || index == 3) {
+                            ho = new HoldObject(hitObject1, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
+                                    Integer.parseInt(str.substring(str.indexOf("n") + 1, str.indexOf("d"))), beatDenominator, bpm,
+                                    Integer.parseInt(str.substring(str.indexOf("d") + 1)));
+                        } else {
+                            ho = new HoldObject(hitObject2, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
+                                    Integer.parseInt(str.substring(str.indexOf("n") + 1, str.indexOf("d"))), beatDenominator, bpm,
+                                    Integer.parseInt(str.substring(str.indexOf("d") + 1)));
+                        }
+                    } else if (index == 0 || index == 3) {
+                        ho = new HitObject(hitObject1, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
+                                Integer.parseInt(str.substring(str.indexOf("n") + 1)), beatDenominator, bpm);
+                    } else {
+                        ho = new HitObject(hitObject2, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
+                                Integer.parseInt(str.substring(str.indexOf("n") + 1)), beatDenominator, bpm);
+                    }
+                    ho.setScale(.5f);
+                    ho.setX(XPOSITIONS[index]);
+                    ho.setY(YPOSITION);
+                    hitObjectMap.get(index).add(ho);
+                    currentBeatMap = new BeatMap(Gdx.audio.newMusic(Gdx.files.internal("colors.mp3")),
+                            Gdx.audio.newSound(Gdx.files.internal("hitsound.wav")),
+                            hitObjectMap,
+                            offset,
+                            bpm,
+                            beatDenominator,
+                            secondsFor4Beats);
+                }
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("broken");
+        }
+        musicWait = false;
+        float minTime = 1000;
+        for (Array<HitObject> hoArray : currentBeatMap.hitObjectMap.values()) {
+            float firstTime = hoArray.get(0).beatTimeMillis;
+            musicWait |= firstTime < currentBeatMap.millisFor4Beats;
+            minTime = Math.min(minTime, firstTime);
+        }
+
+        for (int i = 0; i < 4; i++) {
+            if (Math.abs(currentBeatMap.hitObjectMap.get(i).get(0).beatTimeMillis - minTime) < EPSILON) {
+                drawnHitObjects.add(currentBeatMap.hitObjectMap.get(i).get(0));
+                spawnIndices[i]++;
+            }
+        }
+        currentBeatMap.music.setOnCompletionListener(music1 -> {
+            currentBeatMap.music.setPosition(0);
+            this.myDispose();
+            this.refresh();
+        });
+//        if (musicWait) {
+//            Timer.schedule(new Timer.Task() {
+//                @Override
+//                public void run() {
+//                    previousFrameTime = TimeUtils.millis();
+//                    lastReportedPlayheadPosition = 0;
+//                    currentBeatMap.music.play();
+//                }
+//            }, currentBeatMap.secondsFor4Beats - minTime);
+//        } else {
+
+//        }
+        shapeTester = new ShapeRenderer();
+        isLoading = false;
+        previousFrameTime = TimeUtils.millis();
+        lastReportedPlayheadPosition = 0;
+        currentBeatMap.music.play();
     }
 
     public class MyInputProccesor implements InputProcessor {

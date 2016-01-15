@@ -9,6 +9,7 @@ public class ButtonHero extends Game {
 	public SpriteBatch batch;
 	public BitmapFont font;
 
+
 	public void create() {
 		batch = new SpriteBatch();
 		//Use LibGDX's default Arial font.
