@@ -42,6 +42,7 @@ public class GameScreen implements Screen {
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 1920, 1080);
         currentBeatMap = new BeatMap(new File("colors.txt"));
+        inputMultiplexer.addProcessor(game.uiStage);
         inputMultiplexer.addProcessor(currentBeatMap);
         Gdx.input.setInputProcessor(inputMultiplexer);
         shapeTester = new ShapeRenderer();
@@ -88,7 +89,7 @@ public class GameScreen implements Screen {
                     game.font.draw(game.batch, "MISS!", 450, 500);
                     break;
             }
-            hitTimeElapsedMillis += Gdx.graphics.getDeltaTime() * 1000;
+            hitTimeElapsedMillis += delta * 1000;
         }
 
         if (hitTimeElapsedMillis > 300) {
@@ -107,12 +108,12 @@ public class GameScreen implements Screen {
 
     @Override
     public void pause() {
-
+        currentBeatMap.pause();
     }
 
     @Override
     public void resume() {
-
+        currentBeatMap.resume();
     }
 
     @Override

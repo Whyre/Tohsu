@@ -21,7 +21,7 @@ public class HoldObject extends HitObject {
     @Override
     public void update(long songTime, float millisFor4Beats) {
         setY((GameScreen.BAR_POSITION + ((beatTimeMillis - songTime + GameScreen.visualOffsetMillis) * GameScreen.HIT_OBJECT_DISTANCE) / millisFor4Beats));
-        if (getY() + this.getRegionHeight() <= GameScreen.BAR_POSITION - 100) {
+        if (songTime - beatTimeMillis > holdDurationMillis) {
             onRelease(3);
         }
     }

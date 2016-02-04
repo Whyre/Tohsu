@@ -24,7 +24,7 @@ public class HitObject extends Sprite implements Pool.Poolable {
         GameScreen.hitFlag = hitFlag;
         isHit = true;
         BeatMap.songIndices[index]++;
-        setRegion(400, 400, 100, 100);
+//        setRegion(400, 400, 100, 100);
     }
 
     public boolean calculateHit(float difference) {

@@ -63,7 +63,7 @@ public class BeatMap implements Disposable, InputProcessor {
         try {
             Scanner scanner = new Scanner(beatMapFile);
             this.bpm = scanner.nextInt();
-            this.secondsFor4Beats = 120f / bpm;
+            this.secondsFor4Beats = 120f / this.bpm;
             this.millisFor4Beats = secondsFor4Beats * 1000;
             this.offset = Integer.parseInt(scanner.next().substring(1));
             boolean snapToBeat = scanner.nextBoolean();
@@ -106,10 +106,15 @@ public class BeatMap implements Disposable, InputProcessor {
     }
 
     public void play() {
+        initialize(new File("colors.txt"));
         songTime = 0;
         hitFlag = -1;
-        spawnIndices = new int[4];
-        songIndices = new int[4];
+        for (int i = 0; i < 4; i++) {
+            spawnIndices[i] = 0;
+            songIndices[i] = 0;
+            arrayFinished[i] = false;
+            keyHeld[i] = false;
+        }
         drawnHitObjects = new Array<>(false, 32);
 //        musicWait = false;
         float minTime = 1000;
@@ -128,10 +133,9 @@ public class BeatMap implements Disposable, InputProcessor {
         music.setOnCompletionListener(music1 -> {
             if (isLooping) {
                 music.setPosition(0);
-                play();
+                this.play();
             }
         });
-        System.out.println(TimeUtils.millis());
         previousFrameTime = TimeUtils.millis();
         lastReportedPlayheadPosition = 0;
         music.play();
@@ -141,12 +145,11 @@ public class BeatMap implements Disposable, InputProcessor {
         songTime += TimeUtils.timeSinceMillis(previousFrameTime);
         previousFrameTime = TimeUtils.millis();
         if (music.getPosition() != lastReportedPlayheadPosition) {
-            songTime = (long) Math.round((songTime + music.getPosition() * 1000) / 2);
+            songTime = (long) ((songTime + music.getPosition() * 1000) / 2);
             lastReportedPlayheadPosition = music.getPosition();
         }
 
-        Iterator<HitObject> iter = drawnHitObjects.iterator();
-        while (iter.hasNext()) {
+        for (Iterator<HitObject> iter = drawnHitObjects.iterator(); iter.hasNext(); ) {
             HitObject ho = iter.next();
             ho.update(songTime, millisFor4Beats);
             if (ho.isHit) {
@@ -173,6 +176,18 @@ public class BeatMap implements Disposable, InputProcessor {
         for (HitObject ho : drawnHitObjects) {
             ho.draw(batch);
         }
+    }
+
+    public void pause() {
+        music.pause();
+    }
+
+    public void resume() {
+        songTime = 0;
+        hitFlag = -1;
+        previousFrameTime = TimeUtils.millis();
+        lastReportedPlayheadPosition = music.getPosition();
+        music.play();
     }
 
     public void dispose() {
