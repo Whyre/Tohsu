@@ -25,7 +25,6 @@ public class BeatMap implements Disposable, InputProcessor {
     private static final int[] KEYS = {Input.Keys.A, Input.Keys.S, Input.Keys.D, Input.Keys.F};
     static boolean[] keyHeld = new boolean[4];
     static TextureRegion hitObject1, hitObject2, holdObject1;
-    static int hitFlag = -1; //-1: do nothing, 0: perfect, 1: great, 2:bad, 3:miss
     static int[] spawnIndices = new int[4]; //the index of the first hitobject that has not yet been spawned
     static int[] songIndices = new int[4]; //the index of the first hitobject that has not yet reached the strum bar
     static HoldObject[] heldObjects = new HoldObject[4];
@@ -108,7 +107,6 @@ public class BeatMap implements Disposable, InputProcessor {
     public void play() {
         initialize(new File("colors.txt"));
         songTime = 0;
-        hitFlag = -1;
         for (int i = 0; i < 4; i++) {
             spawnIndices[i] = 0;
             songIndices[i] = 0;
@@ -184,7 +182,6 @@ public class BeatMap implements Disposable, InputProcessor {
 
     public void resume() {
         songTime = 0;
-        hitFlag = -1;
         previousFrameTime = TimeUtils.millis();
         lastReportedPlayheadPosition = music.getPosition();
         music.play();

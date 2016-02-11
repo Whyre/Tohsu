@@ -21,11 +21,12 @@ public class ButtonHero extends Game {
 		uiStage = new Stage(new FitViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight()));
 		font.getData().setScale(7);
 		font.setColor(Color.WHITE);
-		this.setScreen(new GameScreen(this));
+		this.setScreen(new MainMenuScreen(this));
 	}
 
 	public void render() {
 		super.render(); //important!
+
 	}
 
 	public void dispose() {

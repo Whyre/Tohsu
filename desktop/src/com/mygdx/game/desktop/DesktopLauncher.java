@@ -13,6 +13,7 @@ public class DesktopLauncher {
         settings.maxWidth = 1024;
         settings.maxHeight = 1024;
         TexturePacker.process(settings, "textures", "packed", "game");
+		TexturePacker.process(settings, "uistuff", "packed", "ui");
 
 
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();

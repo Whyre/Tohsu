@@ -22,7 +22,7 @@ public class GameScreen implements Screen {
     static final int HIT_OBJECT_DISTANCE = YPOSITION - BAR_POSITION;
 
     static TextureRegion hitObject1, hitObject2, holdObject1;
-    static int hitFlag = -1; //-1: do nothing, 0: perfect, 1: great, 2:bad, 3:miss
+    static HitObject.HitState hitFlag = HitObject.HitState.IDLE; //-1: do nothing, 0: perfect, 1: great, 2:bad, 3:miss
     static long visualOffsetMillis = 0;
 
     final ButtonHero game;
@@ -39,9 +39,11 @@ public class GameScreen implements Screen {
         hitObject1 = atlas.findRegion("mania-note1");
         hitObject2 = atlas.findRegion("mania-note2");
         holdObject1 = atlas.findRegion("mania-note1");
+
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 1920, 1080);
         currentBeatMap = new BeatMap(new File("colors.txt"));
+        //uiStage.initializeGame();
         inputMultiplexer.addProcessor(game.uiStage);
         inputMultiplexer.addProcessor(currentBeatMap);
         Gdx.input.setInputProcessor(inputMultiplexer);
@@ -58,6 +60,7 @@ public class GameScreen implements Screen {
     @Override
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        game.uiStage.draw();
         currentBeatMap.update();
         // tell the camera to update its matrices.
         camera.update();
@@ -74,26 +77,26 @@ public class GameScreen implements Screen {
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.begin();
         currentBeatMap.draw(game.batch);
-        if (hitFlag >= 0) {
-            switch (hitFlag) {
-                case 0:
-                    game.font.draw(game.batch, "PERFECT!", 450, 500);
-                    break;
-                case 1:
-                    game.font.draw(game.batch, "GREAT!", 450, 500);
-                    break;
-                case 2:
-                    game.font.draw(game.batch, "BAD!", 450, 500);
-                    break;
-                case 3:
-                    game.font.draw(game.batch, "MISS!", 450, 500);
-                    break;
-            }
-            hitTimeElapsedMillis += delta * 1000;
+        switch (hitFlag) {
+            case IDLE:
+                break;
+            case PERFECT:
+                game.font.draw(game.batch, "PERFECT!", 450, 500);
+                break;
+            case GREAT:
+                game.font.draw(game.batch, "GREAT!", 450, 500);
+                break;
+            case BAD:
+                game.font.draw(game.batch, "BAD!", 450, 500);
+                break;
+            case MISS:
+                game.font.draw(game.batch, "MISS!", 450, 500);
+                break;
         }
+        hitTimeElapsedMillis += delta * 1000;
 
         if (hitTimeElapsedMillis > 300) {
-            hitFlag = -1;
+            hitFlag = HitObject.HitState.IDLE;
             hitTimeElapsedMillis = 0;
         }
 //        game.font.draw(game.batch, accuracy / 100 + "." + accuracy % 100, 100, 800);
@@ -132,10 +135,6 @@ public class GameScreen implements Screen {
     public void myDispose() {
         currentBeatMap.dispose();
 //        shapeTester.dispose();
-    }
-
-    public BeatMap getCurrentBeatMap() {
-        return currentBeatMap;
     }
 }
 

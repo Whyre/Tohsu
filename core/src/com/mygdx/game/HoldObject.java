@@ -22,12 +22,12 @@ public class HoldObject extends HitObject {
     public void update(long songTime, float millisFor4Beats) {
         setY((GameScreen.BAR_POSITION + ((beatTimeMillis - songTime + GameScreen.visualOffsetMillis) * GameScreen.HIT_OBJECT_DISTANCE) / millisFor4Beats));
         if (songTime - beatTimeMillis > holdDurationMillis) {
-            onRelease(3);
+            onRelease(HitState.MISS);
         }
     }
 
     @Override
-    public void onHit(int hitFlag) {
+    public void onHit(HitState hitFlag) {
         GameScreen.hitFlag = hitFlag;
         isHeld = true;
         BeatMap.keyHeld[index] = true;
@@ -38,37 +38,37 @@ public class HoldObject extends HitObject {
     @Override
     public boolean calculateHit(float difference) {
         if (difference < 37.5) {
-            onHit(0);
+            onHit(HitState.PERFECT);
             return true;
         } else if (difference < 83.5) {
-            onHit(1);
+            onHit(HitState.GREAT);
             return true;
         } else if (difference < 129.5) {
-            onHit(2);
+            onHit(HitState.BAD);
             return true;
         } else if (difference < 400) {
-            onHit(3);
+            onHit(HitState.MISS);
         }
         return false;
     }
 
     public boolean calculateRelease(float difference) {
         if (difference < 37.5) {
-            onRelease(0);
+            onRelease(HitState.PERFECT);
             return true;
         } else if (difference < 83.5) {
-            onRelease(1);
+            onRelease(HitState.GREAT);
             return true;
         } else if (difference < 129.5) {
-            onRelease(2);
+            onRelease(HitState.BAD);
             return true;
         } else if (difference < 400) {
-            onRelease(3);
+            onRelease(HitState.MISS);
         }
         return false;
     }
 
-    public void onRelease(int hitFlag) {
+    public void onRelease(HitState hitFlag) {
         if (!isHeld) {
             onHit(hitFlag);
         }

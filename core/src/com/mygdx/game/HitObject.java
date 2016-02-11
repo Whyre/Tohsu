@@ -20,7 +20,7 @@ public class HitObject extends Sprite implements Pool.Poolable {
         beatTimeMillis = (beatFloat / bpm) * 60000;
     }
 
-    public void onHit(int hitFlag) {
+    public void onHit(HitState hitFlag) {
         GameScreen.hitFlag = hitFlag;
         isHit = true;
         BeatMap.songIndices[index]++;
@@ -29,16 +29,16 @@ public class HitObject extends Sprite implements Pool.Poolable {
 
     public boolean calculateHit(float difference) {
         if (difference < 37.5) {
-            onHit(0);
+            onHit(HitState.PERFECT);
             return true;
         } else if (difference < 83.5) {
-            onHit(1);
+            onHit(HitState.GREAT);
             return true;
         } else if (difference < 129.5) {
-            onHit(2);
+            onHit(HitState.BAD);
             return true;
         } else if (difference < 400) {
-            onHit(3);
+            onHit(HitState.MISS);
         }
         return false;
     }
@@ -47,7 +47,7 @@ public class HitObject extends Sprite implements Pool.Poolable {
         setY((GameScreen.BAR_POSITION + ((beatTimeMillis - songTime + GameScreen.visualOffsetMillis) * GameScreen.HIT_OBJECT_DISTANCE) / millisFor4Beats));
         //if it is a certain distance below the bottom and hasn't been marked as being hit yet, do so
         if (getY() <= GameScreen.BAR_POSITION - 150) {
-            onHit(3);
+            onHit(HitState.MISS);
         }
     }
 
@@ -56,5 +56,9 @@ public class HitObject extends Sprite implements Pool.Poolable {
         beatFloat = 0;
         beatTimeMillis = 0;
         isHit = false;
+    }
+
+    public enum HitState {
+        IDLE, MISS, BAD, GREAT, PERFECT
     }
 }
