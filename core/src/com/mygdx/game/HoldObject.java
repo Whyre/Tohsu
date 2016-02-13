@@ -7,9 +7,8 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
  */
 public class HoldObject extends HitObject {
     int holdDurationBeatNumerator;
-    boolean isReleased, isHeld;
+    boolean isHeld;
     float holdDurationMillis;
-    private boolean atBottom;
 
     public HoldObject(TextureRegion texRegion, int index, int beatNumerator, int beatDenominator, int bpm, int holdDuration, float millisFor4Beats) {
         super(texRegion, index, beatNumerator, beatDenominator, bpm);
@@ -74,6 +73,7 @@ public class HoldObject extends HitObject {
         }
         BeatMap.keyHeld[index] = false;
         GameScreen.hitFlag = hitFlag;
+        GameScreen.hitTimeElapsedMillis = 0;
         isHit = true;
     }
 }

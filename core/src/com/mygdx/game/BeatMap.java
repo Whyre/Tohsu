@@ -142,9 +142,10 @@ public class BeatMap implements Disposable, InputProcessor {
     public void update() {
         songTime += TimeUtils.timeSinceMillis(previousFrameTime);
         previousFrameTime = TimeUtils.millis();
-        if (music.getPosition() != lastReportedPlayheadPosition) {
-            songTime = (long) ((songTime + music.getPosition() * 1000) / 2);
-            lastReportedPlayheadPosition = music.getPosition();
+        float musicPosition = music.getPosition();
+        if (musicPosition != lastReportedPlayheadPosition) {
+            songTime = (long) ((songTime + musicPosition * 1000) / 2);
+            lastReportedPlayheadPosition = musicPosition;
         }
 
         for (Iterator<HitObject> iter = drawnHitObjects.iterator(); iter.hasNext(); ) {

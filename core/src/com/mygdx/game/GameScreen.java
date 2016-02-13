@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 
 import java.io.File;
 
@@ -24,14 +25,16 @@ public class GameScreen implements Screen {
     static TextureRegion hitObject1, hitObject2, holdObject1;
     static HitObject.HitState hitFlag = HitObject.HitState.IDLE; //-1: do nothing, 0: perfect, 1: great, 2:bad, 3:miss
     static long visualOffsetMillis = 0;
+    static float hitTimeElapsedMillis;
 
     final ButtonHero game;
+    private int score = 0;
+    private int accuracy = 100;
     private InputMultiplexer inputMultiplexer = new InputMultiplexer();
     private OrthographicCamera camera;
     private ShapeRenderer shapeTester;
     private BeatMap currentBeatMap;
     private TextureAtlas atlas;
-    private float hitTimeElapsedMillis;
 
     public GameScreen(final ButtonHero game) {
         this.game = game;
@@ -39,11 +42,12 @@ public class GameScreen implements Screen {
         hitObject1 = atlas.findRegion("mania-note1");
         hitObject2 = atlas.findRegion("mania-note2");
         holdObject1 = atlas.findRegion("mania-note1");
+        Table uitable = new Table();
+        uitable.setFillParent(true);
 
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 1920, 1080);
         currentBeatMap = new BeatMap(new File("colors.txt"));
-        //uiStage.initializeGame();
         inputMultiplexer.addProcessor(game.uiStage);
         inputMultiplexer.addProcessor(currentBeatMap);
         Gdx.input.setInputProcessor(inputMultiplexer);
@@ -51,6 +55,9 @@ public class GameScreen implements Screen {
         currentBeatMap.play();
     }
 
+    public static void incrementScore(HitObject.HitState hitFlag) {
+
+    }
 
     @Override
     public void show() {

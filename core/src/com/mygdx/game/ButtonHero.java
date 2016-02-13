@@ -26,10 +26,10 @@ public class ButtonHero extends Game {
 
 	public void render() {
 		super.render(); //important!
-
 	}
 
 	public void dispose() {
+		uiStage.dispose();
 		batch.dispose();
 		font.dispose();
 	}

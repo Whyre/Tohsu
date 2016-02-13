@@ -1,0 +1,27 @@
+
+ui.png
+size: 1024,256
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+checked-button
+  rotate: false
+  xy: 2, 2
+  size: 321, 144
+  orig: 321, 144
+  offset: 0, 0
+  index: -1
+down-button
+  rotate: false
+  xy: 325, 2
+  size: 321, 144
+  orig: 321, 144
+  offset: 0, 0
+  index: -1
+up-button
+  rotate: false
+  xy: 648, 2
+  size: 321, 144
+  orig: 321, 144
+  offset: 0, 0
+  index: -1

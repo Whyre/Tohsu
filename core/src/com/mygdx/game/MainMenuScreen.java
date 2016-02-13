@@ -26,7 +26,10 @@ public class MainMenuScreen implements Screen {
         TextureAtlas uiatlas = new TextureAtlas(Gdx.files.internal("packed/ui.atlas"));
         Skin uiskin = new Skin(Gdx.files.internal("packed/ui.json"), uiatlas);
         Table table = new Table(uiskin);
-        TextButton testButton = new TextButton("test", uiskin);
+        table.setFillParent(true);
+        table.pad(100);
+        TextButton testButton = new TextButton("Start Game!", uiskin);
+        table.add(testButton);
         testButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -36,7 +39,18 @@ public class MainMenuScreen implements Screen {
                 dispose();
             }
         });
-        game.uiStage.addActor(testButton);
+        table.row();
+        TextButton exitButton = new TextButton("Exit!", uiskin);
+        exitButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                dispose();
+                game.dispose();
+                Gdx.app.exit();
+            }
+        });
+        table.add(exitButton);
+        game.uiStage.addActor(table);
         this.game = game;
         inputMultiplexer.addProcessor(game.uiStage);
         Gdx.input.setInputProcessor(inputMultiplexer);
@@ -53,14 +67,9 @@ public class MainMenuScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClearColor(0, 0, 0.0f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        game.uiStage.act();
+        game.uiStage.act(delta);
         game.uiStage.draw();
         camera.update();
-        game.batch.setProjectionMatrix(camera.combined);
-
-        game.batch.begin();
-
-        game.batch.end();
     }
 
     @Override
