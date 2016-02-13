@@ -27,14 +27,19 @@ public class HitObject extends Sprite implements Pool.Poolable {
     public void onHit(HitState hitFlag) {
         GameScreen.hitFlag = hitFlag;
         GameScreen.hitTimeElapsedMillis = 0;
+        GameScreen.incrementScore(hitFlag);
         isHit = true;
         BeatMap.songIndices[index]++;
 //        setRegion(400, 400, 100, 100);
     }
 
     public boolean calculateHit(float difference) {
-        if (difference < 37.5) {
+        if (difference < 16) {
             onHit(HitState.PERFECT);
+            return true;
+        }
+        if (difference < 37.5) {
+            onHit(HitState.EXCELLENT);
             return true;
         } else if (difference < 83.5) {
             onHit(HitState.GREAT);
@@ -64,6 +69,6 @@ public class HitObject extends Sprite implements Pool.Poolable {
     }
 
     public enum HitState {
-        IDLE, MISS, BAD, GREAT, PERFECT
+        IDLE, MISS, BAD, GREAT, EXCELLENT, PERFECT
     }
 }

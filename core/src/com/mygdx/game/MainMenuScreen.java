@@ -5,9 +5,7 @@ import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
@@ -23,24 +21,24 @@ public class MainMenuScreen implements Screen {
     private boolean startGame;
 
     public MainMenuScreen(ButtonHero game) {
-        TextureAtlas uiatlas = new TextureAtlas(Gdx.files.internal("packed/ui.atlas"));
-        Skin uiskin = new Skin(Gdx.files.internal("packed/ui.json"), uiatlas);
-        Table table = new Table(uiskin);
+        Table table = new Table(game.uiskin);
         table.setFillParent(true);
         table.pad(100);
-        TextButton testButton = new TextButton("Start Game!", uiskin);
+        TextButton testButton = new TextButton("Start Game!", game.uiskin);
         table.add(testButton);
         testButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 startGame = true;
                 game.setScreen(new GameScreen(game));
-                game.uiStage.clear();
+                for (Actor a : game.uiStage.getActors()) {
+                    a.remove();
+                }
                 dispose();
             }
         });
         table.row();
-        TextButton exitButton = new TextButton("Exit!", uiskin);
+        TextButton exitButton = new TextButton("Exit!", game.uiskin);
         exitButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {

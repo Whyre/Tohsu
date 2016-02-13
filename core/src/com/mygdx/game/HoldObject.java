@@ -28,6 +28,7 @@ public class HoldObject extends HitObject {
     @Override
     public void onHit(HitState hitFlag) {
         GameScreen.hitFlag = hitFlag;
+        GameScreen.incrementScore(hitFlag);
         isHeld = true;
         BeatMap.keyHeld[index] = true;
         BeatMap.songIndices[index]++;
@@ -36,8 +37,12 @@ public class HoldObject extends HitObject {
 
     @Override
     public boolean calculateHit(float difference) {
-        if (difference < 37.5) {
+        if (difference < 16) {
             onHit(HitState.PERFECT);
+            return true;
+        }
+        if (difference < 37.5) {
+            onHit(HitState.EXCELLENT);
             return true;
         } else if (difference < 83.5) {
             onHit(HitState.GREAT);
@@ -52,8 +57,12 @@ public class HoldObject extends HitObject {
     }
 
     public boolean calculateRelease(float difference) {
-        if (difference < 37.5) {
+        if (difference < 16) {
             onRelease(HitState.PERFECT);
+            return true;
+        }
+        if (difference < 37.5) {
+            onRelease(HitState.EXCELLENT);
             return true;
         } else if (difference < 83.5) {
             onRelease(HitState.GREAT);
@@ -71,6 +80,7 @@ public class HoldObject extends HitObject {
         if (!isHeld) {
             onHit(hitFlag);
         }
+        GameScreen.incrementScore(hitFlag);
         BeatMap.keyHeld[index] = false;
         GameScreen.hitFlag = hitFlag;
         GameScreen.hitTimeElapsedMillis = 0;
