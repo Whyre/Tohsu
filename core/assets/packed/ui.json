@@ -26,7 +26,7 @@
       b: 0,
       a: 1
     }
-    },
+  },
   com
   .
   badlogic
@@ -43,7 +43,7 @@
       .
       fnt
     }
-    },
+  },
   com
   .
   badlogic
@@ -96,7 +96,7 @@
         a: 1
       }
     }
-    },
+  },
   com
   .
   badlogic
@@ -114,5 +114,5 @@
       font: medium,
       fontColor: white
     }
-    }
+  }
 }
