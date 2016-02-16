@@ -41,18 +41,7 @@ public class BeatMap implements Disposable, InputProcessor {
     private float lastReportedPlayheadPosition;
     private boolean[] arrayFinished = new boolean[4];
     private boolean isLooping = true;
-
-
-    public BeatMap(Music music, Sound hitSound, IntMap<Array<HitObject>> hitObjectMap, int offset, int bpm, int beatDenominator, float secondsFor4Beats) {
-        this.music = music;
-        this.hitSound = hitSound;
-        this.hitObjectMap = hitObjectMap;
-        this.bpm = bpm;
-        this.offset = offset;
-        this.beatDenominator = beatDenominator;
-        this.secondsFor4Beats = secondsFor4Beats;
-        millisFor4Beats = secondsFor4Beats * 1000;
-    }
+    private ScoreManager scoreManager;
 
     public BeatMap(File beatMapFile) {
         this.initialize(beatMapFile);

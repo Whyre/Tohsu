@@ -4,14 +4,10 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.Pool;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Work in progress
  */
 public class HitObject extends Sprite implements Pool.Poolable {
-    final static Map<HitState, Integer> hitStateMap = new HashMap<>();
     float beatFloat, beatTimeMillis;
     boolean isHit = false;
     //    int beatNumerator;
@@ -25,7 +21,7 @@ public class HitObject extends Sprite implements Pool.Poolable {
     }
 
     public void onHit(HitState hitFlag) {
-        GameScreen.hitFlag = hitFlag;
+        GameScreen.hitFlagString = hitFlag.toString();
         GameScreen.hitTimeElapsedMillis = 0;
         GameScreen.incrementScore(hitFlag);
         isHit = true;

@@ -27,7 +27,7 @@ public class HoldObject extends HitObject {
 
     @Override
     public void onHit(HitState hitFlag) {
-        GameScreen.hitFlag = hitFlag;
+        GameScreen.hitFlagString = hitFlag.toString();
         GameScreen.incrementScore(hitFlag);
         isHeld = true;
         BeatMap.keyHeld[index] = true;
@@ -82,7 +82,7 @@ public class HoldObject extends HitObject {
         }
         GameScreen.incrementScore(hitFlag);
         BeatMap.keyHeld[index] = false;
-        GameScreen.hitFlag = hitFlag;
+        GameScreen.hitFlagString = hitFlag.toString();
         GameScreen.hitTimeElapsedMillis = 0;
         isHit = true;
     }
