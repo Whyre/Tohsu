@@ -28,59 +28,36 @@ public class HoldObject extends HitObject {
     @Override
     public void onHit(HitState hitFlag) {
         GameScreen.hitFlagString = hitFlag.toString();
-        GameScreen.incrementScore(hitFlag);
         isHeld = true;
         BeatMap.keyHeld[index] = true;
         BeatMap.songIndices[index]++;
         BeatMap.heldObjects[index] = this;
     }
 
-    @Override
-    public boolean calculateHit(float difference) {
-        if (difference < 16) {
-            onHit(HitState.PERFECT);
-            return true;
-        }
-        if (difference < 37.5) {
-            onHit(HitState.EXCELLENT);
-            return true;
-        } else if (difference < 83.5) {
-            onHit(HitState.GREAT);
-            return true;
-        } else if (difference < 129.5) {
-            onHit(HitState.BAD);
-            return true;
-        } else if (difference < 400) {
-            onHit(HitState.MISS);
-        }
-        return false;
-    }
-
-    public boolean calculateRelease(float difference) {
+    public HitState calculateRelease(float difference) {
         if (difference < 16) {
             onRelease(HitState.PERFECT);
-            return true;
+            return HitState.PERFECT;
         }
         if (difference < 37.5) {
             onRelease(HitState.EXCELLENT);
-            return true;
+            return HitState.EXCELLENT;
         } else if (difference < 83.5) {
             onRelease(HitState.GREAT);
-            return true;
+            return HitState.GREAT;
         } else if (difference < 129.5) {
             onRelease(HitState.BAD);
-            return true;
+            return HitState.BAD;
         } else if (difference < 400) {
             onRelease(HitState.MISS);
         }
-        return false;
+        return HitState.MISS;
     }
 
     public void onRelease(HitState hitFlag) {
         if (!isHeld) {
             onHit(hitFlag);
         }
-        GameScreen.incrementScore(hitFlag);
         BeatMap.keyHeld[index] = false;
         GameScreen.hitFlagString = hitFlag.toString();
         GameScreen.hitTimeElapsedMillis = 0;

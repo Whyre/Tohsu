@@ -18,7 +18,6 @@ public class MainMenuScreen implements Screen {
 
     private InputMultiplexer inputMultiplexer = new InputMultiplexer();
     private OrthographicCamera camera;
-    private boolean startGame;
 
     public MainMenuScreen(ButtonHero game) {
         Table table = new Table(game.uiskin);
@@ -29,11 +28,11 @@ public class MainMenuScreen implements Screen {
         testButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                startGame = true;
                 game.setScreen(new GameScreen(game));
                 for (Actor a : game.uiStage.getActors()) {
                     a.remove();
                 }
+                game.uiStage.dispose();
                 dispose();
             }
         });

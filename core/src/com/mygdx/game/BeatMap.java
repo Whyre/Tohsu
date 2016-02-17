@@ -7,10 +7,12 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Disposable;
-import com.badlogic.gdx.utils.IntMap;
-import com.badlogic.gdx.utils.TimeUtils;
+import com.badlogic.gdx.scenes.scene2d.Event;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.utils.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -20,7 +22,7 @@ import java.util.Scanner;
 /**
  *Handles the positions of the hitobjects and the sounds
  */
-public class BeatMap implements Disposable, InputProcessor {
+public class BeatMap extends Stage implements Disposable, InputProcessor {
     static final double EPSILON = 0.0000001;
     private static final int[] KEYS = {Input.Keys.A, Input.Keys.S, Input.Keys.D, Input.Keys.F};
     static boolean[] keyHeld = new boolean[4];
@@ -43,7 +45,44 @@ public class BeatMap implements Disposable, InputProcessor {
     private boolean isLooping = true;
     private ScoreManager scoreManager;
 
-    public BeatMap(File beatMapFile) {
+    private Pool<Event> eventPool;
+    private Label scoreLabel, hitStateLabel;
+    private Skin uiskin;
+    private float hitStateElapsedMillis;
+
+    public BeatMap(File beatMapFile, ScoreManager scoreManager, Skin skin) {
+        this.scoreManager = scoreManager;
+        uiskin = skin;
+        eventPool = new Pool<Event>() {
+            @Override
+            protected Event newObject() {
+                Event e = new Event();
+                e.setStage(BeatMap.this);
+                e.setTarget(hitStateLabel);
+                e.setListenerActor(hitStateLabel);
+                e.setBubbles(false);
+                e.setCapture(false);
+                return e;
+            }
+        };
+
+        Table uitable = new Table();
+        uitable.setFillParent(true);
+        uitable.pad(100);
+        scoreLabel = new Label(Integer.toString(scoreManager.score), uiskin);
+        scoreLabel.setAlignment(Align.right);
+        hitStateLabel = new Label("test", uiskin);
+        hitStateLabel.addListener(event -> {
+            hitStateLabel.setText("asdkfj;alsdkjf");
+            //hitStateLabel.setVisible(true);
+            hitStateElapsedMillis = 0;
+            return true;
+        });
+        uitable.add(scoreLabel);
+        uitable.row();
+        uitable.add(hitStateLabel);
+        uitable.right().top();
+        this.addActor(uitable);
         this.initialize(beatMapFile);
     }
 
@@ -91,6 +130,7 @@ public class BeatMap implements Disposable, InputProcessor {
         } catch (FileNotFoundException e) {
             System.out.println("broken");
         }
+
     }
 
     public void play() {
@@ -135,6 +175,12 @@ public class BeatMap implements Disposable, InputProcessor {
         if (musicPosition != lastReportedPlayheadPosition) {
             songTime = (long) ((songTime + musicPosition * 1000) / 2);
             lastReportedPlayheadPosition = musicPosition;
+        }
+        scoreLabel.setText(Integer.toString(scoreManager.score));
+//        hitStateLabel.setText(hitFlagString);
+        hitStateElapsedMillis += Gdx.graphics.getDeltaTime() * 1000;
+        if (hitStateElapsedMillis > 300) {
+            hitStateLabel.setText("");
         }
 
         for (Iterator<HitObject> iter = drawnHitObjects.iterator(); iter.hasNext(); ) {
@@ -188,8 +234,11 @@ public class BeatMap implements Disposable, InputProcessor {
             if (keycode == KEYS[i] && songIndices[i] < hitObjectMap.get(i).size) {
                 HitObject ho = hitObjectMap.get(i).get(songIndices[i]);
                 float difference = Math.abs(ho.beatTimeMillis - songTime);
-                if (ho.calculateHit(difference))
+                HitObject.HitState hitState = ho.calculateHit(difference);
+                if (hitState != HitObject.HitState.MISS)
                     hitSound.play();
+                scoreManager.incrementScore(hitState);
+                hitStateLabel.fire(eventPool.obtain());
                 return true;
             }
         }
@@ -202,8 +251,11 @@ public class BeatMap implements Disposable, InputProcessor {
             if (keycode == KEYS[i] && keyHeld[i]) {
                 HoldObject ho = heldObjects[i];
                 float difference = ho.beatTimeMillis + ho.holdDurationMillis - songTime;
-                if (ho.calculateRelease(difference))
+                HitObject.HitState hitState = ho.calculateRelease(difference);
+                if (hitState != HitObject.HitState.MISS)
                     hitSound.play();
+                scoreManager.incrementScore(hitState);
+                hitStateLabel.fire(eventPool.obtain());
                 return true;
             }
         }
