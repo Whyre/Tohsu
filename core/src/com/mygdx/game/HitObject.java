@@ -2,12 +2,11 @@ package com.mygdx.game;
 
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.utils.Pool;
 
 /**
  * Work in progress
  */
-public class HitObject extends Sprite implements Pool.Poolable {
+public class HitObject extends Sprite {
     float beatFloat, beatTimeMillis;
     boolean isHit = false;
     //    int beatNumerator;
@@ -21,8 +20,7 @@ public class HitObject extends Sprite implements Pool.Poolable {
     }
 
     public void onHit(HitState hitFlag) {
-        GameScreen.hitFlagString = hitFlag.toString();
-        GameScreen.hitTimeElapsedMillis = 0;
+        BeatMap.hitFlagString = hitFlag.toString();
         isHit = true;
         BeatMap.songIndices[index]++;
 //        setRegion(400, 400, 100, 100);
@@ -54,13 +52,6 @@ public class HitObject extends Sprite implements Pool.Poolable {
         if (getY() <= GameScreen.BAR_POSITION - 150) {
             onHit(HitState.MISS);
         }
-    }
-
-    @Override
-    public void reset() {
-        beatFloat = 0;
-        beatTimeMillis = 0;
-        isHit = false;
     }
 
     public enum HitState {

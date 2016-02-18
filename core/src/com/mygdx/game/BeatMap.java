@@ -31,6 +31,7 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
     static int[] songIndices = new int[4]; //the index of the first hitobject that has not yet reached the strum bar
     static HoldObject[] heldObjects = new HoldObject[4];
     static long visualOffsetMillis = 0;
+    static String hitFlagString;
     Array<HitObject> drawnHitObjects;
     IntMap<Array<HitObject>> hitObjectMap = new IntMap<>(4);
     long previousFrameTime, songTime;
@@ -73,7 +74,7 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
         scoreLabel.setAlignment(Align.right);
         hitStateLabel = new Label("test", uiskin);
         hitStateLabel.addListener(event -> {
-            hitStateLabel.setText("asdkfj;alsdkjf");
+            hitStateLabel.setText(hitFlagString);
             //hitStateLabel.setVisible(true);
             hitStateElapsedMillis = 0;
             return true;
@@ -134,7 +135,7 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
     }
 
     public void play() {
-        initialize(new File("colors.txt"));
+//        initialize(new File("colors.txt"));
         songTime = 0;
         for (int i = 0; i < 4; i++) {
             spawnIndices[i] = 0;
@@ -157,20 +158,22 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
                 spawnIndices[i]++;
             }
         }
-        music.setOnCompletionListener(music1 -> {
+        music.setOnCompletionListener(music1-> {
             if (isLooping) {
                 music.setPosition(0);
+                this.initialize(new File("colors.txt"));
                 this.play();
             }
         });
-        previousFrameTime = TimeUtils.millis();
-        lastReportedPlayheadPosition = 0;
+//        previousFrameTime = TimeUtils.millis();
+//        lastReportedPlayheadPosition = 0;
         music.play();
     }
 
-    public void update() {
-        songTime += TimeUtils.timeSinceMillis(previousFrameTime);
-        previousFrameTime = TimeUtils.millis();
+    public void update(float delta) {
+//        songTime += TimeUtils.timeSinceMillis(previousFrameTime);
+//        previousFrameTime = TimeUtils.millis();
+        songTime += delta * 1000;
         float musicPosition = music.getPosition();
         if (musicPosition != lastReportedPlayheadPosition) {
             songTime = (long) ((songTime + musicPosition * 1000) / 2);
@@ -178,7 +181,7 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
         }
         scoreLabel.setText(Integer.toString(scoreManager.score));
 //        hitStateLabel.setText(hitFlagString);
-        hitStateElapsedMillis += Gdx.graphics.getDeltaTime() * 1000;
+        hitStateElapsedMillis += delta * 1000;
         if (hitStateElapsedMillis > 300) {
             hitStateLabel.setText("");
         }

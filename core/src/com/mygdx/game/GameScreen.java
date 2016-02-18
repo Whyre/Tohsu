@@ -24,7 +24,6 @@ public class GameScreen implements Screen {
     static TextureRegion hitObject1, hitObject2, holdObject1;
     static String hitFlagString = "";
     static long visualOffsetMillis = 0;
-    static float hitTimeElapsedMillis;
     final ButtonHero game;
     private InputMultiplexer inputMultiplexer = new InputMultiplexer();
     private OrthographicCamera camera;
@@ -58,16 +57,9 @@ public class GameScreen implements Screen {
     @Override
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        currentBeatMap.update();
+        currentBeatMap.update(delta);
 //        game.uiStage.act(delta);
 //        game.uiStage.draw();
-//        scoreLabel.setText(Integer.toString(scoreManager.score));
-//        hitStateLabel.setText(hitFlagString);
-//        hitTimeElapsedMillis += delta * 1000;
-//        if (hitTimeElapsedMillis > 300) {
-//            hitStateLabel.setText("");
-//            hitTimeElapsedMillis = 0;
-//        }
         // tell the camera to update its matrices.
         camera.update();
         // tell the SpriteBatch to render in the
@@ -80,8 +72,8 @@ public class GameScreen implements Screen {
             shapeTester.line(XPOSITIONS[i + 1] + 25, 0, XPOSITIONS[i + 1] + 25, 1080);
         }
         shapeTester.end();
-        game.batch.setProjectionMatrix(camera.combined);
         currentBeatMap.draw();
+        game.batch.setProjectionMatrix(camera.combined);
         game.batch.begin();
         currentBeatMap.draw(game.batch);
         game.batch.end();

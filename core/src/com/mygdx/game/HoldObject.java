@@ -27,7 +27,7 @@ public class HoldObject extends HitObject {
 
     @Override
     public void onHit(HitState hitFlag) {
-        GameScreen.hitFlagString = hitFlag.toString();
+        BeatMap.hitFlagString = hitFlag.toString();
         isHeld = true;
         BeatMap.keyHeld[index] = true;
         BeatMap.songIndices[index]++;
@@ -38,8 +38,7 @@ public class HoldObject extends HitObject {
         if (difference < 16) {
             onRelease(HitState.PERFECT);
             return HitState.PERFECT;
-        }
-        if (difference < 37.5) {
+        } if (difference < 37.5) {
             onRelease(HitState.EXCELLENT);
             return HitState.EXCELLENT;
         } else if (difference < 83.5) {
@@ -60,7 +59,6 @@ public class HoldObject extends HitObject {
         }
         BeatMap.keyHeld[index] = false;
         GameScreen.hitFlagString = hitFlag.toString();
-        GameScreen.hitTimeElapsedMillis = 0;
         isHit = true;
     }
 }
