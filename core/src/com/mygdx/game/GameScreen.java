@@ -9,8 +9,6 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
 
 import java.io.File;
 
@@ -27,11 +25,6 @@ public class GameScreen implements Screen {
     static TextureRegion hitObject1, hitObject2, holdObject1;
     static String hitFlagString = "";
     static long visualOffsetMillis = 0;
-    static float hitTimeElapsedMillis;
-    private static int score = 0;
-    private static int combo;
-    private static int accuracy = 100;
-    private static int hitObjectsPassed;
     final ButtonHero game;
     private InputMultiplexer inputMultiplexer = new InputMultiplexer();
     private OrthographicCamera camera;
@@ -39,7 +32,7 @@ public class GameScreen implements Screen {
     private BeatMap currentBeatMap;
     private BulletHell bulletHell;
     private TextureAtlas atlas;
-    private Label hitStateLabel, scoreLabel;
+    private ScoreManager scoreManager;
 
     public GameScreen(final ButtonHero game) {
         this.game = game;
@@ -47,30 +40,15 @@ public class GameScreen implements Screen {
         hitObject1 = atlas.findRegion("mania-note1");
         hitObject2 = atlas.findRegion("mania-note2");
         holdObject1 = atlas.findRegion("mania-note1");
-        Table uitable = new Table();
-        uitable.setFillParent(true);
-        uitable.pad(100);
-        scoreLabel = new Label(Integer.toString(score), game.uiskin);
-        hitStateLabel = new Label(hitFlagString, game.uiskin);
-        hitStateLabel.addListener(event -> {
-            hitTimeElapsedMillis = 0;
-            hitStateLabel.setVisible(true);
-            System.out.println("something changed");
-            return true;
-        });
-        uitable.add(scoreLabel);
-        uitable.row();
-        uitable.add(hitStateLabel);
-        uitable.right().top();
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 1920, 1080);
-        currentBeatMap = new BeatMap(new File("colors.txt"));
-        bulletHell = new BulletHell(1920/2, 1920);
+        scoreManager = new ScoreManager();
+        currentBeatMap = new BeatMap(new File("colors.txt"), scoreManager, game.uiskin);
+	bulletHell = new BulletHell(1920/2, 1920);
         inputMultiplexer.addProcessor(game.uiStage);
         inputMultiplexer.addProcessor(currentBeatMap);
         Gdx.input.setInputProcessor(inputMultiplexer);
         shapeTester = new ShapeRenderer();
-        game.uiStage.addActor(uitable);
         currentBeatMap.play();
     }
 
@@ -139,16 +117,14 @@ public class GameScreen implements Screen {
             shapeTester.line(XPOSITIONS[i + 1] + 25, 0, XPOSITIONS[i + 1] + 25, 1080);
         }
         shapeTester.end();
+        currentBeatMap.draw();
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.begin();
 
         bulletHell.draw(game.batch);
 
         currentBeatMap.draw(game.batch);
-
-//        game.font.draw(game.batch, accuracy / 100 + "." + accuracy % 100, 100, 800);
         game.batch.end();
-
     }
 
     @Override
