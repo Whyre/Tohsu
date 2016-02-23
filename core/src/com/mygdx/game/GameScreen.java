@@ -22,6 +22,7 @@ public class GameScreen implements Screen {
     static final int YPOSITION = 900;
     static final int BAR_POSITION = 200;
     static final int HIT_OBJECT_DISTANCE = YPOSITION - BAR_POSITION;
+    public static final int HEIGHT = 1080;
 
     static TextureRegion hitObject1, hitObject2, holdObject1;
     static String hitFlagString = "";
@@ -36,6 +37,7 @@ public class GameScreen implements Screen {
     private OrthographicCamera camera;
     private ShapeRenderer shapeTester;
     private BeatMap currentBeatMap;
+    private BulletHell bulletHell;
     private TextureAtlas atlas;
     private Label hitStateLabel, scoreLabel;
 
@@ -63,6 +65,7 @@ public class GameScreen implements Screen {
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 1920, 1080);
         currentBeatMap = new BeatMap(new File("colors.txt"));
+        bulletHell = new BulletHell(1920/2, 1920);
         inputMultiplexer.addProcessor(game.uiStage);
         inputMultiplexer.addProcessor(currentBeatMap);
         Gdx.input.setInputProcessor(inputMultiplexer);
@@ -73,29 +76,32 @@ public class GameScreen implements Screen {
 
     public static void incrementScore(HitObject.HitState hitFlag) {
         hitObjectsPassed++;
+        double x = (double) hitObjectsPassed;
+        double ratio = (x-1.0)/x;
+
         switch (hitFlag) {
             case MISS:
-                accuracy = (accuracy * (hitObjectsPassed - 1)) / hitObjectsPassed;
+                accuracy = (int) Math.round(accuracy * ratio);
                 score -= 10000 * (1 + combo/10);
                 combo = 0;
                 break;
             case BAD:
-                accuracy = (accuracy + 16) * (hitObjectsPassed - 1) / hitObjectsPassed;
+                accuracy = (int) Math.round((accuracy + 16) * ratio);
                 combo++;
                 score -= 5000 * (100 - accuracy);
                 break;
             case GREAT:
-                accuracy = (accuracy + 33) * (hitObjectsPassed - 1) / hitObjectsPassed;
+                accuracy = (int)Math.round((accuracy + 33) * ratio);
                 combo++;
                 score += 500 * accuracy;
                 break;
             case EXCELLENT:
-                accuracy = (accuracy + 90) * (hitObjectsPassed - 1) / hitObjectsPassed;
+                accuracy = (int)Math.round((accuracy + 90) * ratio);
                 combo++;
                 score += 800 * accuracy;
                 break;
             case PERFECT:
-                accuracy = (accuracy + 100) * (hitObjectsPassed - 1) / hitObjectsPassed;
+                accuracy = (int)Math.round((accuracy + 100) * ratio);
                 combo++;
                 score += 1000 * accuracy;
                 break;
@@ -111,6 +117,7 @@ public class GameScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         currentBeatMap.update();
+        bulletHell.update();
         game.uiStage.act(delta);
         game.uiStage.draw();
         scoreLabel.setText(Integer.toString(score));
@@ -134,6 +141,9 @@ public class GameScreen implements Screen {
         shapeTester.end();
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.begin();
+
+        bulletHell.draw(game.batch);
+
         currentBeatMap.draw(game.batch);
 
 //        game.font.draw(game.batch, accuracy / 100 + "." + accuracy % 100, 100, 800);
