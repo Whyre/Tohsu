@@ -20,6 +20,7 @@ public class GameScreen implements Screen {
     static final int YPOSITION = 900;
     static final int BAR_POSITION = 200;
     static final int HIT_OBJECT_DISTANCE = YPOSITION - BAR_POSITION;
+    static final int HEIGHT = 1080;
 
     static TextureRegion hitObject1, hitObject2, holdObject1;
     static String hitFlagString = "";
@@ -31,6 +32,7 @@ public class GameScreen implements Screen {
     private BeatMap currentBeatMap;
     private TextureAtlas atlas;
     private ScoreManager scoreManager;
+    private BulletHell bulletHell;
 
     public GameScreen(final ButtonHero game) {
         this.game = game;
@@ -42,6 +44,7 @@ public class GameScreen implements Screen {
         camera.setToOrtho(false, 1920, 1080);
         scoreManager = new ScoreManager();
         currentBeatMap = new BeatMap(new File("colors.txt"), scoreManager, game.uiskin);
+        bulletHell = new BulletHell(1920/2, 1920);
         inputMultiplexer.addProcessor(game.uiStage);
         inputMultiplexer.addProcessor(currentBeatMap);
         Gdx.input.setInputProcessor(inputMultiplexer);
@@ -58,6 +61,7 @@ public class GameScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         currentBeatMap.update(delta);
+        bulletHell.update();
 //        game.uiStage.act(delta);
 //        game.uiStage.draw();
         // tell the camera to update its matrices.
@@ -76,6 +80,7 @@ public class GameScreen implements Screen {
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.begin();
         currentBeatMap.draw(game.batch);
+        bulletHell.draw(game.batch);
         game.batch.end();
     }
 
@@ -107,5 +112,3 @@ public class GameScreen implements Screen {
         shapeTester.dispose();
     }
 }
-
-

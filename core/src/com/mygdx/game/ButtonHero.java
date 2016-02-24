@@ -31,7 +31,7 @@ public class ButtonHero extends Game {
 	}
 
 	public void render() {
-		super.render();
+		super.render(); //important!
 	}
 
 	public void dispose() {
