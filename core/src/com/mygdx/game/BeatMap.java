@@ -24,6 +24,9 @@ import java.util.Scanner;
  */
 public class BeatMap extends Stage implements Disposable, InputProcessor {
     static final double EPSILON = 0.0000001;
+    static final String[] HITFLAGSTRINGS = {
+            "Perfect!", "Excellent!", "Great!", "Bad!", "Miss!"
+    };
     private static final int[] KEYS = {Input.Keys.A, Input.Keys.S, Input.Keys.D, Input.Keys.F};
     static boolean[] keyHeld = new boolean[4];
     static TextureRegion hitObject1, hitObject2, holdObject1;
@@ -33,7 +36,7 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
     static long visualOffsetMillis = 0;
     static String hitFlagString;
     Array<HitObject> drawnHitObjects;
-    IntMap<Array<HitObject>> hitObjectMap = new IntMap<>(4);
+    Array<Array<HitObject>> hitObjectArrays;
     long previousFrameTime, songTime;
     private float secondsFor4Beats, millisFor4Beats;
     private Music music;
@@ -45,7 +48,6 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
     private boolean[] arrayFinished = new boolean[4];
     private boolean isLooping = true;
     private ScoreManager scoreManager;
-
     private Pool<Event> eventPool;
     private Label scoreLabel, hitStateLabel;
     private Skin uiskin;
@@ -89,6 +91,7 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
 
     public void initialize(File beatMapFile) {
         try {
+            hitObjectArrays = new Array<>(4);
             Scanner scanner = new Scanner(beatMapFile);
             this.bpm = scanner.nextInt();
             this.secondsFor4Beats = 120f / this.bpm;
@@ -99,7 +102,7 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
                 this.beatDenominator = scanner.nextInt();
             while (scanner.hasNextLine()) {
                 int index = scanner.nextInt() - 1;
-                this.hitObjectMap.put(index, new Array<>());
+                hitObjectArrays.add(new Array<>());
                 while (!scanner.hasNextInt() && scanner.hasNext()) {
                     String str = scanner.next();
                     HitObject ho;
@@ -115,15 +118,15 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
                         }
                     } else if (index == 0 || index == 3) {
                         ho = new HitObject(GameScreen.hitObject1, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
-                                Integer.parseInt(str.substring(str.indexOf("n") + 1)), beatDenominator, bpm);
+                                Integer.parseInt(str.substring(str.indexOf("n") + 1)), beatDenominator, bpm, millisFor4Beats);
                     } else {
                         ho = new HitObject(GameScreen.hitObject2, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
-                                Integer.parseInt(str.substring(str.indexOf("n") + 1)), beatDenominator, bpm);
+                                Integer.parseInt(str.substring(str.indexOf("n") + 1)), beatDenominator, bpm, millisFor4Beats);
                     }
                     ho.setScale(.5f);
                     ho.setX(GameScreen.XPOSITIONS[index]);
                     ho.setY(GameScreen.YPOSITION);
-                    this.hitObjectMap.get(index).add(ho);
+                    this.hitObjectArrays.get(index).add(ho);
                     this.music = Gdx.audio.newMusic(Gdx.files.internal("colors.mp3"));
                     this.hitSound = Gdx.audio.newSound(Gdx.files.internal("hitsound.wav"));
                 }
@@ -146,19 +149,19 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
         drawnHitObjects = new Array<>(false, 32);
 //        musicWait = false;
         float minTime = 1000;
-        for (Array<HitObject> hoArray : hitObjectMap.values()) {
+        for (Array<HitObject> hoArray : hitObjectArrays) {
             float firstTime = hoArray.get(0).beatTimeMillis;
 //            musicWait |= firstTime < millisFor4Beats;
             minTime = Math.min(minTime, firstTime);
         }
 
         for (int i = 0; i < 4; i++) {
-            if (Math.abs(hitObjectMap.get(i).get(0).beatTimeMillis - minTime) < EPSILON) {
-                drawnHitObjects.add(hitObjectMap.get(i).get(0));
+            if (Math.abs(hitObjectArrays.get(i).get(0).beatTimeMillis - minTime) < EPSILON) {
+                drawnHitObjects.add(hitObjectArrays.get(i).get(0));
                 spawnIndices[i]++;
             }
         }
-        music.setOnCompletionListener(music1-> {
+        music.setOnCompletionListener(music-> {
             if (isLooping) {
                 music.setPosition(0);
                 this.initialize(new File("colors.txt"));
@@ -188,7 +191,7 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
 
         for (Iterator<HitObject> iter = drawnHitObjects.iterator(); iter.hasNext(); ) {
             HitObject ho = iter.next();
-            ho.update(songTime, millisFor4Beats);
+            ho.update(songTime);
             if (ho.isHit) {
                 iter.remove();
             }
@@ -197,7 +200,7 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
         for (int i = 0; i < 4; i++) {
             if (!arrayFinished[i]) {
                 try {
-                    HitObject ho = hitObjectMap.get(i).get(spawnIndices[i]);
+                    HitObject ho = hitObjectArrays.get(i).get(spawnIndices[i]);
                     if (ho.beatTimeMillis <= songTime + millisFor4Beats) {
                         drawnHitObjects.add(ho);
                         spawnIndices[i]++;
@@ -234,10 +237,9 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
     @Override
     public boolean keyDown(int keycode) {
         for (int i = 0; i < 4; i++) {
-            if (keycode == KEYS[i] && songIndices[i] < hitObjectMap.get(i).size) {
-                HitObject ho = hitObjectMap.get(i).get(songIndices[i]);
-                float difference = Math.abs(ho.beatTimeMillis - songTime);
-                HitObject.HitState hitState = ho.calculateHit(difference);
+            if (keycode == KEYS[i] && songIndices[i] < hitObjectArrays.get(i).size) {
+                HitObject ho = hitObjectArrays.get(i).get(songIndices[i]);
+                HitObject.HitState hitState = ho.calculateHit(Math.abs(ho.beatTimeMillis - songTime));
                 if (hitState != HitObject.HitState.MISS)
                     hitSound.play();
                 scoreManager.incrementScore(hitState);
@@ -253,8 +255,7 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
         for (int i = 0; i < 4; i++) {
             if (keycode == KEYS[i] && keyHeld[i]) {
                 HoldObject ho = heldObjects[i];
-                float difference = ho.beatTimeMillis + ho.holdDurationMillis - songTime;
-                HitObject.HitState hitState = ho.calculateRelease(difference);
+                HitObject.HitState hitState = ho.calculateRelease(ho.beatTimeMillis + ho.holdDurationMillis - songTime);
                 if (hitState != HitObject.HitState.MISS)
                     hitSound.play();
                 scoreManager.incrementScore(hitState);
