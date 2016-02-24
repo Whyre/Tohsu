@@ -57,7 +57,6 @@ public class HitObject extends Sprite {
         } else {
             return HitState.IDLE;
         }
-
     }
 
     public void update(long songTime) {

@@ -22,7 +22,7 @@ public class ScoreManager {
         switch (hitFlag) {
             case MISS:
                 accuracy = (accuracy * (hitObjectsPassed - 1)) / hitObjectsPassed;
-                score -= 10000 * (1 + combo/10);
+                score -= 10000;
                 combo = 0;
                 break;
             case BAD:

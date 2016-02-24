@@ -30,16 +30,16 @@ public class GameScreen implements Screen {
     private OrthographicCamera camera;
     private ShapeRenderer shapeTester;
     private BeatMap currentBeatMap;
-    private TextureAtlas atlas;
+    private TextureAtlas rhythmAtlas;
     private ScoreManager scoreManager;
     private BulletHell bulletHell;
 
     public GameScreen(final ButtonHero game) {
         this.game = game;
-        atlas = new TextureAtlas(Gdx.files.internal("packed/game.atlas"));
-        hitObject1 = atlas.findRegion("mania-note1");
-        hitObject2 = atlas.findRegion("mania-note2");
-        holdObject1 = atlas.findRegion("mania-note1");
+        rhythmAtlas = new TextureAtlas(Gdx.files.internal("packed/game.atlas"));
+        hitObject1 = rhythmAtlas.findRegion("mania-note1");
+        hitObject2 = rhythmAtlas.findRegion("mania-note2");
+        holdObject1 = rhythmAtlas.findRegion("mania-note1");
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 1920, 1080);
         scoreManager = new ScoreManager();
@@ -107,7 +107,7 @@ public class GameScreen implements Screen {
     @Override
     public void dispose() {
         game.dispose();
-        atlas.dispose();
+        rhythmAtlas.dispose();
         currentBeatMap.dispose();
         shapeTester.dispose();
     }

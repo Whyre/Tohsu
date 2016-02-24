@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -41,6 +42,7 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
     private float secondsFor4Beats, millisFor4Beats;
     private Music music;
     private Sound hitSound;
+    private Image track, barLeft, barRight;
     private int bpm = -1;
     private int offset;
     private int beatDenominator = -1;
@@ -84,8 +86,11 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
         uitable.add(scoreLabel);
         uitable.row();
         uitable.add(hitStateLabel);
-        uitable.right().top();
+        uitable.left().top();
         this.addActor(uitable);
+
+        track = new Image(skin, "Track");
+//        this.addActor(track);
         this.initialize(beatMapFile);
     }
 

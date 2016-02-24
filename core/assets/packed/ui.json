@@ -25,5 +25,10 @@
   default: {
     font: medium, fontColor: white
   }
-}
+},
+  com.badlogic.gdx.scenes.scene2d.ui.ImageButton$ImageButtonStyle: {
+  key: {
+    imageDown: Key1-pressed, imageUp: Key1
+  }
+},
 }

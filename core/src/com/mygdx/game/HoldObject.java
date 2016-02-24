@@ -26,12 +26,43 @@ public class HoldObject extends HitObject {
         }
     }
 
-    @Override
-    public void onHit(HitState hitFlag) {
+    public void onHit() {
         isHeld = true;
         BeatMap.keyHeld[index] = true;
         BeatMap.songIndices[index]++;
         BeatMap.heldObjects[index] = this;
+    }
+
+    @Override
+    public HitState calculateHit(float difference) {
+        if (difference < 16) {
+            BeatMap.hitFlagString = BeatMap.HITFLAGSTRINGS[0];
+            onHit();
+            return HitState.PERFECT;
+        } else if (difference < 37.5) {
+            BeatMap.hitFlagString = BeatMap.HITFLAGSTRINGS[1];
+            onHit();
+            BeatMap.songIndices[index]++;
+            return HitState.EXCELLENT;
+        } else if (difference < 83.5) {
+            BeatMap.hitFlagString = BeatMap.HITFLAGSTRINGS[2];
+            onHit();
+            BeatMap.songIndices[index]++;
+            return HitState.GREAT;
+        } else if (difference < 129.5) {
+            BeatMap.hitFlagString = BeatMap.HITFLAGSTRINGS[3];
+            onHit();
+            BeatMap.songIndices[index]++;
+            return HitState.BAD;
+        } else if (difference < 300) {
+            BeatMap.hitFlagString = BeatMap.HITFLAGSTRINGS[4];
+            onHit();
+            BeatMap.songIndices[index]++;
+            return HitState.MISS;
+        } else {
+            return HitState.IDLE;
+        }
+
     }
 
     public HitState calculateRelease(float difference) {
