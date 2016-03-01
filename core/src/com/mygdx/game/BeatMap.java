@@ -99,7 +99,7 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
             hitObjectArrays = new Array<>(4);
             Scanner scanner = new Scanner(beatMapFile);
             this.bpm = scanner.nextInt();
-            this.secondsFor4Beats = 120f / this.bpm;
+            this.secondsFor4Beats = 90f / this.bpm;
             this.millisFor4Beats = secondsFor4Beats * 1000;
             this.offset = Integer.parseInt(scanner.next().substring(1));
             boolean snapToBeat = scanner.nextBoolean();
@@ -183,9 +183,10 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
 //        previousFrameTime = TimeUtils.millis();
         songTime += delta * 1000;
         float musicPosition = music.getPosition();
-        if (musicPosition != lastReportedPlayheadPosition) {
+//        if (musicPosition != lastReportedPlayheadPosition) {
+        if (Math.abs(songTime - musicPosition) < EPSILON) {
             songTime = (long) ((songTime + musicPosition * 1000) / 2);
-            lastReportedPlayheadPosition = musicPosition;
+//            lastReportedPlayheadPosition = musicPosition;
         }
         scoreLabel.setText(Integer.toString(scoreManager.score));
 //        hitStateLabel.setText(hitFlagString);
@@ -260,7 +261,7 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
         for (int i = 0; i < 4; i++) {
             if (keycode == KEYS[i] && keyHeld[i]) {
                 HoldObject ho = heldObjects[i];
-                HitObject.HitState hitState = ho.calculateRelease(ho.beatTimeMillis + ho.holdDurationMillis - songTime);
+                HitObject.HitState hitState = ho.calculateRelease(Math.abs(ho.beatTimeMillis + ho.holdDurationMillis - songTime));
                 if (hitState != HitObject.HitState.MISS)
                     hitSound.play();
                 scoreManager.incrementScore(hitState);

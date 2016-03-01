@@ -22,28 +22,28 @@ public class ScoreManager {
         switch (hitFlag) {
             case MISS:
                 accuracy = (accuracy * (hitObjectsPassed - 1)) / hitObjectsPassed;
-                score -= 10000;
+                score -= 2000;
                 combo = 0;
                 break;
             case BAD:
                 accuracy = (accuracy * (hitObjectsPassed - 1) + 16) / hitObjectsPassed;
                 combo++;
-                score -= 5000 * (100 - accuracy);
+                score += 100;
                 break;
             case GREAT:
                 accuracy = (accuracy * (hitObjectsPassed - 1) + 33) / hitObjectsPassed;
                 combo++;
-                score += 500 * accuracy;
+                score += 300;
                 break;
             case EXCELLENT:
                 accuracy = (accuracy * (hitObjectsPassed - 1) + 90) / hitObjectsPassed;
                 combo++;
-                score += 800 * accuracy;
+                score += 500;
                 break;
             case PERFECT:
                 accuracy = (accuracy * (hitObjectsPassed - 1) + 100) / hitObjectsPassed;
                 combo++;
-                score += 1000 * accuracy;
+                score += 1000;
                 break;
         }
     }

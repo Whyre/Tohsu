@@ -22,11 +22,11 @@ public class HitObject extends Sprite {
         beatTimeMillis = (beatFloat / bpm) * 60000;
     }
 
-    public void onHit(HitState hitFlag) {
-        BeatMap.hitFlagString = hitFlag.toString();
-        isHit = true;
-        BeatMap.songIndices[index]++;
-    }
+//    public void onHit(HitState hitFlag) {
+//        BeatMap.hitFlagString = hitFlag.toString();
+//        isHit = true;
+//        BeatMap.songIndices[index]++;
+//    }
 
     public HitState calculateHit(float difference) {
         if (difference < 16) {

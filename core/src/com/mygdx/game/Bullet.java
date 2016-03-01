@@ -1,11 +1,9 @@
 package com.mygdx.game;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.Rectangle;
 
 /**
  * Created by johnlhota on 2/23/16.
@@ -29,7 +27,7 @@ public class Bullet  extends Sprite {
         double len = Math.sqrt(dx*dx + dy*dy);
         vx = (float) (dx*SPEED/len);
         vy = (float) (dy*SPEED/len);
-        System.out.println(dx);
+        //System.out.println(dx);
     }
 
     public void update() {
