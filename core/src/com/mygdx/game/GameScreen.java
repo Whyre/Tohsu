@@ -16,10 +16,6 @@ import java.io.File;
  * Work in progress
  */
 public class GameScreen implements Screen {
-    static final int[] XPOSITIONS = {50, 250, 450, 650};
-    static final int YPOSITION = 900;
-    static final int BAR_POSITION = 200;
-    static final int HIT_OBJECT_DISTANCE = YPOSITION - BAR_POSITION;
     static final int HEIGHT = 1080;
 
     static TextureRegion hitObject1, hitObject2, holdObject1;
@@ -71,9 +67,9 @@ public class GameScreen implements Screen {
         shapeTester.setProjectionMatrix(camera.combined);
         shapeTester.begin(ShapeRenderer.ShapeType.Line);
         shapeTester.setColor(Color.WHITE);
-        shapeTester.line(0, BAR_POSITION + 45, 1920, BAR_POSITION + 45);
+        shapeTester.line(0, BeatMap.BAR_POSITION + 45, 1920, BeatMap.BAR_POSITION + 45);
         for (int i = 0; i < 3; i++) {
-            shapeTester.line(XPOSITIONS[i + 1] + 25, 0, XPOSITIONS[i + 1] + 25, 1080);
+            shapeTester.line(BeatMap.XPOSITIONS[i + 1] + 25, 0, BeatMap.XPOSITIONS[i + 1] + 25, 1080);
         }
         shapeTester.end();
         currentBeatMap.draw();

@@ -4,8 +4,7 @@ package com.mygdx.game;
  * Created by William on 2/13/2016.
  */
 public class ScoreManager {
-    static float hitTimeElapsedMillis;
-    int score = 0;
+    private int score = 0;
     private int combo;
     private int accuracy = 100;
     private int hitObjectsPassed;
@@ -46,6 +45,10 @@ public class ScoreManager {
                 score += 1000;
                 break;
         }
+    }
+
+    public int getScore() {
+        return score;
     }
 
 }

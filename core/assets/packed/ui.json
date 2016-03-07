@@ -31,4 +31,10 @@
     imageDown: Key1-pressed, imageUp: Key1
   }
 },
+  com.badlogic.gdx.scenes.scene2d.ui.ProgressBar$ProgressBarStyle: {
+  default-vertical: {
+    background: down-button, knob: Key1, knobBefore: Key1
+  }
+},
+
 }

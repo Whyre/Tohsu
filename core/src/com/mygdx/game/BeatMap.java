@@ -9,10 +9,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.utils.*;
 
 import java.io.File;
@@ -28,17 +25,17 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
     static final String[] HITFLAGSTRINGS = {
             "Perfect!", "Excellent!", "Great!", "Bad!", "Miss!"
     };
+    static final int[] XPOSITIONS = {50, 250, 450, 650};
+    static final int YPOSITION = 900;
+    static final int BAR_POSITION = 200;
+    static final int HIT_OBJECT_DISTANCE = YPOSITION - BAR_POSITION;
     private static final int[] KEYS = {Input.Keys.A, Input.Keys.S, Input.Keys.D, Input.Keys.F};
-    static boolean[] keyHeld = new boolean[4];
     static TextureRegion hitObject1, hitObject2, holdObject1;
-    static int[] spawnIndices = new int[4]; //the index of the first hitobject that has not yet been spawned
-    static int[] songIndices = new int[4]; //the index of the first hitobject that has not yet reached the strum bar
-    static HoldObject[] heldObjects = new HoldObject[4];
     static long visualOffsetMillis = 0;
-    static String hitFlagString;
     Array<HitObject> drawnHitObjects;
     Array<Array<HitObject>> hitObjectArrays;
     long previousFrameTime, songTime;
+    private int[] spawnIndices = new int[4]; //the index of the first hitobject that has not yet been spawned
     private float secondsFor4Beats, millisFor4Beats;
     private Music music;
     private Sound hitSound;
@@ -50,13 +47,16 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
     private boolean[] arrayFinished = new boolean[4];
     private boolean isLooping = true;
     private ScoreManager scoreManager;
+    private ProgressBar scoreBar;
     private Pool<Event> eventPool;
     private Label scoreLabel, hitStateLabel;
     private Skin uiskin;
     private float hitStateElapsedMillis;
+    private SongManager songManager;
 
     public BeatMap(File beatMapFile, ScoreManager scoreManager, Skin skin) {
         this.scoreManager = scoreManager;
+        songManager = new SongManager();
         uiskin = skin;
         eventPool = new Pool<Event>() {
             @Override
@@ -70,23 +70,27 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
                 return e;
             }
         };
+        scoreBar = new ProgressBar(0, 1000, 5, true, uiskin);
+        scoreBar.setAnimateDuration(0.1f);
 
         Table uitable = new Table();
         uitable.setFillParent(true);
         uitable.pad(100);
-        scoreLabel = new Label(Integer.toString(scoreManager.score), uiskin);
+        scoreLabel = new Label(Integer.toString(scoreManager.getScore()), uiskin);
         scoreLabel.setAlignment(Align.right);
         hitStateLabel = new Label("test", uiskin);
         hitStateLabel.addListener(event -> {
-            hitStateLabel.setText(hitFlagString);
+            hitStateLabel.setText(songManager.getHitFlagString());
             //hitStateLabel.setVisible(true);
             hitStateElapsedMillis = 0;
             return true;
         });
+        uitable.left().top();
         uitable.add(scoreLabel);
         uitable.row();
         uitable.add(hitStateLabel);
-        uitable.left().top();
+        uitable.row();
+//        uitable.add(scoreBar);
         this.addActor(uitable);
 
         track = new Image(skin, "Track");
@@ -113,24 +117,24 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
                     HitObject ho;
                     if (str.contains("d")) {
                         if (index == 0 || index == 3) {
-                            ho = new HoldObject(GameScreen.hitObject1, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
+                            ho = new HoldObject(songManager, GameScreen.hitObject1, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
                                     Integer.parseInt(str.substring(str.indexOf("n") + 1, str.indexOf("d"))), beatDenominator, bpm,
                                     Integer.parseInt(str.substring(str.indexOf("d") + 1)), secondsFor4Beats * 1000);
                         } else {
-                            ho = new HoldObject(GameScreen.hitObject2, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
+                            ho = new HoldObject(songManager, GameScreen.hitObject2, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
                                     Integer.parseInt(str.substring(str.indexOf("n") + 1, str.indexOf("d"))), beatDenominator, bpm,
                                     Integer.parseInt(str.substring(str.indexOf("d") + 1)), secondsFor4Beats * 1000);
                         }
                     } else if (index == 0 || index == 3) {
-                        ho = new HitObject(GameScreen.hitObject1, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
+                        ho = new HitObject(songManager, GameScreen.hitObject1, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
                                 Integer.parseInt(str.substring(str.indexOf("n") + 1)), beatDenominator, bpm, millisFor4Beats);
                     } else {
-                        ho = new HitObject(GameScreen.hitObject2, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
+                        ho = new HitObject(songManager, GameScreen.hitObject2, index, Integer.parseInt(str.substring(0, str.indexOf("n"))) * beatDenominator +
                                 Integer.parseInt(str.substring(str.indexOf("n") + 1)), beatDenominator, bpm, millisFor4Beats);
                     }
                     ho.setScale(.5f);
-                    ho.setX(GameScreen.XPOSITIONS[index]);
-                    ho.setY(GameScreen.YPOSITION);
+                    ho.setX(XPOSITIONS[index]);
+                    ho.setY(YPOSITION);
                     this.hitObjectArrays.get(index).add(ho);
                     this.music = Gdx.audio.newMusic(Gdx.files.internal("colors.mp3"));
                     this.hitSound = Gdx.audio.newSound(Gdx.files.internal("hitsound.wav"));
@@ -145,11 +149,11 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
     public void play() {
 //        initialize(new File("colors.txt"));
         songTime = 0;
+        songManager.resetSongIndices();
         for (int i = 0; i < 4; i++) {
             spawnIndices[i] = 0;
-            songIndices[i] = 0;
             arrayFinished[i] = false;
-            keyHeld[i] = false;
+            songManager.releaseKey(i);
         }
         drawnHitObjects = new Array<>(false, 32);
 //        musicWait = false;
@@ -178,17 +182,20 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
         music.play();
     }
 
+    int i = 0;
     public void update(float delta) {
 //        songTime += TimeUtils.timeSinceMillis(previousFrameTime);
 //        previousFrameTime = TimeUtils.millis();
         songTime += delta * 1000;
         float musicPosition = music.getPosition();
 //        if (musicPosition != lastReportedPlayheadPosition) {
-        if (Math.abs(songTime - musicPosition) < EPSILON) {
+        if (Math.abs(songTime - musicPosition) > EPSILON) {
             songTime = (long) ((songTime + musicPosition * 1000) / 2);
 //            lastReportedPlayheadPosition = musicPosition;
         }
-        scoreLabel.setText(Integer.toString(scoreManager.score));
+        scoreLabel.setText(Integer.toString(scoreManager.getScore()));
+        System.out.println(scoreBar.setValue(i));
+        i+= 100;
 //        hitStateLabel.setText(hitFlagString);
         hitStateElapsedMillis += delta * 1000;
         if (hitStateElapsedMillis > 300) {
@@ -243,9 +250,11 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
     @Override
     public boolean keyDown(int keycode) {
         for (int i = 0; i < 4; i++) {
-            if (keycode == KEYS[i] && songIndices[i] < hitObjectArrays.get(i).size) {
-                HitObject ho = hitObjectArrays.get(i).get(songIndices[i]);
-                HitObject.HitState hitState = ho.calculateHit(Math.abs(ho.beatTimeMillis - songTime));
+            int songIndex = songManager.getSongIndex(i);
+            if (keycode == KEYS[i] && songIndex < hitObjectArrays.get(i).size) {
+//                HitObject ho = hitObjectArrays.get(i).get(songIndices[i]);
+                HitObject ho = hitObjectArrays.get(i).get(songIndex);
+                HitObject.HitState hitState = ho.calculateHit(songTime);
                 if (hitState != HitObject.HitState.MISS)
                     hitSound.play();
                 scoreManager.incrementScore(hitState);
@@ -259,9 +268,10 @@ public class BeatMap extends Stage implements Disposable, InputProcessor {
     @Override
     public boolean keyUp(int keycode) {
         for (int i = 0; i < 4; i++) {
-            if (keycode == KEYS[i] && keyHeld[i]) {
-                HoldObject ho = heldObjects[i];
-                HitObject.HitState hitState = ho.calculateRelease(Math.abs(ho.beatTimeMillis + ho.holdDurationMillis - songTime));
+            if (keycode == KEYS[i] && songManager.isKeyHeld(i)) {
+//                HoldObject ho = heldObjects[i];
+                HoldObject ho = songManager.getHeldObject(i);
+                HitObject.HitState hitState = ho.calculateRelease(songTime);
                 if (hitState != HitObject.HitState.MISS)
                     hitSound.play();
                 scoreManager.incrementScore(hitState);
