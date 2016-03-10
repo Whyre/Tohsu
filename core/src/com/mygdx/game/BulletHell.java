@@ -2,11 +2,15 @@ package com.mygdx.game;
 
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.utils.Pool;
+
 
 import java.util.Set;
 import java.util.HashSet;
@@ -14,33 +18,35 @@ import java.util.HashSet;
 /**
  * Created by johnlhota on 2/16/16.
  */
-public class BulletHell implements Disposable, InputProcessor {
+public class BulletHell extends Stage {
 
     private BHPlayer player;
     private Enemy enemy;
     public static int MIN_X, MAX_X;
-    private Set<Bullet> bullets;
-    private Set<Bullet> removeBullets;
+    private BulletPool bulletPool;
 
     public BulletHell(int minx, int maxx) {
         MIN_X = minx;
         MAX_X = maxx;
+        bulletPool = new BulletPool();
         player = new BHPlayer(this);
         enemy = new Enemy(this);
-        bullets = new HashSet<Bullet>();
-        removeBullets = new HashSet<Bullet>();
+        addActor(player);
+        addActor(enemy);
     }
 
-    public void update() {
-        player.update();
-        enemy.update();
-        bullets.removeAll(removeBullets);
-        for(Bullet b : bullets) {
-            b.update();
-            if(rectCollision(b, player)) {
-                System.out.println("rekt");
-            }
-        }
+    @Override
+    public void act() {
+        super.act();
+//        player.update();
+//        enemy.update();
+//        bullets.removeAll(removeBullets);
+//        for(Bullet b : bullets) {
+//            b.act();
+//            if(rectCollision(b, player)) {
+//                System.out.println("rekt");
+//            }
+//        }
     }
 
     public boolean rectCollision(Sprite a, Sprite b) {
@@ -64,14 +70,6 @@ public class BulletHell implements Disposable, InputProcessor {
         return false;
     }
 
-    public void draw(SpriteBatch batch) {
-        player.draw(batch);
-        enemy.draw(batch);
-        for(Bullet b : bullets) {
-            b.draw(batch);
-        }
-    }
-
     public BHPlayer getPlayer() {
         return player;
     }
@@ -80,55 +78,18 @@ public class BulletHell implements Disposable, InputProcessor {
         return enemy;
     }
 
-    public void newBullet(Sprite shooter, Sprite target) {
-        bullets.add(new Bullet(this, shooter, target));
+    public void newBullet(Actor shooter, Actor target) {
+        Bullet b = (Bullet) (bulletPool.obtain());
+        b.setPath(shooter, target);
+        addActor(b);
     }
 
-    public void removeBullet(Bullet b) {
-        removeBullets.add(b);
+    public class BulletPool extends Pool<Bullet> {
+
+        @Override
+        public Bullet newObject() {
+            return new Bullet(BulletHell.this);
+        }
     }
 
-    @Override public void dispose() { }
-
-    @Override
-    public boolean keyDown(int keycode) {
-
-        return false;
-    }
-
-    @Override
-    public boolean keyUp(int keycode) {
-
-        return false;
-    }
-
-    @Override
-    public boolean keyTyped(char character) {
-        return false;
-    }
-
-    @Override
-    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        return false;
-    }
-
-    @Override
-    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-        return false;
-    }
-
-    @Override
-    public boolean touchDragged(int screenX, int screenY, int pointer) {
-        return false;
-    }
-
-    @Override
-    public boolean mouseMoved(int screenX, int screenY) {
-        return false;
-    }
-
-    @Override
-    public boolean scrolled(int amount) {
-        return false;
-    }
 }

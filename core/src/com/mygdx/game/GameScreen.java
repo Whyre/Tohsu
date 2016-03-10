@@ -57,7 +57,7 @@ public class GameScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         currentBeatMap.update(delta);
-        bulletHell.update();
+        bulletHell.act();
 //        game.uiStage.act(delta);
 //        game.uiStage.draw();
         // tell the camera to update its matrices.
@@ -76,7 +76,7 @@ public class GameScreen implements Screen {
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.begin();
         currentBeatMap.draw(game.batch);
-        bulletHell.draw(game.batch);
+        bulletHell.draw();
         game.batch.end();
     }
 
